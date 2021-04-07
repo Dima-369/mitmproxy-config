@@ -1,0 +1,3 @@
+#+begin_src bash :results output silent
+git clone https://github.com/Gira-X/mitmproxy-config.git ~/.mitmproxy
+#+end_src
