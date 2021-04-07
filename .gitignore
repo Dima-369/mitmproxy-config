@@ -1,0 +1,4 @@
+command_history
+*.pem
+*.cer
+*.p12

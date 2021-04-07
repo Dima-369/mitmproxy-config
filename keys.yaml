@@ -1,0 +1,19 @@
+# ctx: chooser, commands, dataviewer, eventlog, flowlist, flowview, global, grideditor, help, keybindings, options
+# from https://docs.mitmproxy.org/stable/concepts-commands/
+
+- key: "+"
+  cmd: export.clip curl @focus
+  help: Copy curl to clipboard
+- key: "t"
+  cmd: console.nav.down
+- key: "c"
+  cmd: console.nav.up
+- key: "u"
+  ctx: ["flowview"]
+  cmd: console.nav.left
+- key: "h" # mapping to "n" is broken apparently
+  ctx: ["flowview"]
+  cmd: console.nav.next
+- key: "a"
+  ctx: ["flowview", "flowlist", "help", "keybindings"]
+  cmd: console.command

@@ -1,0 +1,4 @@
+# ignore_hosts: ['a', 'b']
+
+console_mouse: false
+web_open_browser: false
