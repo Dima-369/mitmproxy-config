@@ -6,11 +6,12 @@ from urllib.parse import unquote
 import pyperclip
 import typing
 import re
+import json
 
 
 def format_json_human():
     raw = pyperclip.paste()
-    pyperclip.copy(json.dump(json.load(raw), indent=2))
+    pyperclip.copy(json.dumps(json.loads(raw), indent=2))
 
 
 class CurlAddon:
@@ -38,6 +39,35 @@ class RequestBodyAddon:
         ctx.log.alert("Copied request body to clipboard")
 
 
+class FullResponseBodyAddon:
+    @command.command("a")
+    def do(self) -> None:
+        ctx.master.commands.execute("cut.clip @focus request.url")
+        url = pyperclip.paste()
+
+        ctx.master.commands.execute("cut.clip @focus response.content")
+        format_json_human()
+        # trimmed to not copy huge responses
+        response = pyperclip.paste()
+        if len(response) >= 2100:
+            response = response[:2100] + "\n..."
+
+        ctx.master.commands.execute("cut.clip @focus request.timestamp_start")
+        start = pyperclip.paste()
+        ctx.master.commands.execute("cut.clip @focus response.timestamp_end")
+        end = pyperclip.paste()
+        time = float(end) - float(start)
+
+        pyperclip.copy(
+            url
+            + " took "
+            + "{:.2f}".format(time)
+            + "s to return:\n\n```json\n"
+            + response
+            + "\n```")
+        ctx.log.alert("Copied URL, response time and body in ```json to clipboard")
+
+
 class ResponseBodyAddon:
     @command.command("bs")
     def do(self) -> None:
@@ -56,6 +86,7 @@ class QuitAddon:
     @command.command("e")
     def do(self) -> None:
         ctx.master.commands.execute("console.exit")
+
 
 class FlowResumeAddon:
     @command.command("r")
@@ -88,4 +119,5 @@ addons = [
     QuitAddon(),
     InterceptAddon(),
     FlowResumeAddon(),
+    FullResponseBodyAddon(),
 ]
