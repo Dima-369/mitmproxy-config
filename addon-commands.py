@@ -1,31 +1,31 @@
 from mitmproxy import command
 from mitmproxy import ctx
 from mitmproxy import flow
+from urllib.parse import unquote
 
+import pyperclip
 import typing
-import subprocess
 import re
 
 
 def format_json_human():
-    subprocess.getoutput(
-        "pbpaste | python -c 'import json, sys ; json.dump(json.load(sys.stdin), sys.stdout, indent=2)' | pbcopy")
+    raw = pyperclip.paste()
+    pyperclip.copy(json.dump(json.load(raw), indent=2))
 
 
 class CurlAddon:
     @command.command("cu")
     def do(self) -> None:
         ctx.master.commands.execute("export.clip curl @focus")
-        ctx.log.alert("Copied cURL to clipboard")
+        pyperclip.copy("```bash\n" + pyperclip.paste() + "\n```")
+        ctx.log.alert("Copied cURL with ```bash to clipboard")
 
 
 class UrlAddon:
     @command.command("u")
     def do(self) -> None:
         ctx.master.commands.execute("cut.clip @focus request.url")
-        # stripping the newline inside python does not work, but tr -d does
-        subprocess.getoutput(
-            "pbpaste | python3 -c 'import sys; from urllib.parse import unquote; print(unquote(sys.stdin.read()));' | tr -d '\n' | pbcopy")
+        pyperclip.copy(unquote(pyperclip.paste()))
         ctx.log.alert("Copied URL to clipboard")
 
 
@@ -57,12 +57,14 @@ class QuitAddon:
     def do(self) -> None:
         ctx.master.commands.execute("console.exit")
 
+class FlowResumeAddon:
     @command.command("r")
     def do(self) -> None:
         ctx.master.commands.execute("flow.resume @focus")
 
 
 # todo try out https://docs.mitmproxy.org/stable/overview-features/#map-local
+
 
 class InterceptAddon:
     @command.command("intercept.inner")
@@ -85,4 +87,5 @@ addons = [
     KeyBindingAddon(),
     QuitAddon(),
     InterceptAddon(),
+    FlowResumeAddon(),
 ]
