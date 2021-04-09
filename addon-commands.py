@@ -24,8 +24,7 @@ def beautify_curl(s):
         if next_cmd:
             output += "'" + s + "' \\\n"
             next_cmd = False
-
-        if s.startswith("--"):
+        elif s.startswith("--"):
             output += "   " + s + " \\\n"
             next_cmd = False
         elif s.startswith("-"):
