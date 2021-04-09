@@ -7,6 +7,7 @@ import pyperclip
 import typing
 import re
 import json
+import shlex
 
 
 def format_json_human():
@@ -14,11 +15,35 @@ def format_json_human():
     pyperclip.copy(json.dumps(json.loads(raw), indent=2))
 
 
+def beautify_curl(s):
+    parts = shlex.split(s)
+    output = parts[0] + " \\\n"
+    next_cmd = False
+
+    for s in parts[1:]:
+        if next_cmd:
+            output += "'" + s + "' \\\n"
+            next_cmd = False
+
+        if s.startswith("--"):
+            output += "   " + s + " \\\n"
+            next_cmd = False
+        elif s.startswith("-"):
+            output += "   " + s + " "
+            next_cmd = True
+
+    output = output.strip()
+    if output.endswith("\\"):
+        output = output[:-1]
+    return output
+
+
 class CurlAddon:
     @command.command("cu")
     def do(self) -> None:
         ctx.master.commands.execute("export.clip curl @focus")
-        pyperclip.copy("```bash\n" + pyperclip.paste() + "\n```")
+        pyperclip.copy("```bash\n" + beautify_curl(pyperclip.paste()) +
+                       "\n```")
         ctx.log.alert("Copied cURL with ```bash to clipboard")
 
 
@@ -58,14 +83,10 @@ class FullResponseBodyAddon:
         end = pyperclip.paste()
         time = float(end) - float(start)
 
-        pyperclip.copy(
-            url
-            + " took "
-            + "{:.2f}".format(time)
-            + "s to return:\n\n```json\n"
-            + response
-            + "\n```")
-        ctx.log.alert("Copied URL, response time and body in ```json to clipboard")
+        pyperclip.copy(url + " took " + "{:.2f}".format(time) +
+                       "s to return:\n\n```json\n" + response + "\n```")
+        ctx.log.alert(
+            "Copied URL, response time and body in ```json to clipboard")
 
 
 class ResponseBodyAddon:
