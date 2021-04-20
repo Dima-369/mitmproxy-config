@@ -37,6 +37,10 @@ def beautify_curl(s):
         elif s.startswith("-"):
             output += "   " + s + " "
             next_cmd = True
+        else:
+            # in most cases this is the URL at the very end of the command
+            output += "   '" + s + "' \\\n"
+            next_cmd = False
 
     output = output.strip()
     if output.endswith("\\"):
