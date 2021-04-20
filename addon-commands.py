@@ -1,10 +1,11 @@
 from mitmproxy import command
 from mitmproxy import ctx
 from mitmproxy import flow
+import typing
+
 from urllib.parse import unquote
 
 import pyperclip
-import typing
 import re
 import json
 import shlex
@@ -13,6 +14,12 @@ import shlex
 def format_json_human():
     raw = pyperclip.paste()
     pyperclip.copy(json.dumps(json.loads(raw), indent=2))
+
+
+def copy_response_body():
+    ctx.master.commands.execute("cut.clip @focus response.content")
+    format_json_human()
+    ctx.log.alert("Copied response body to clipboard")
 
 
 def beautify_curl(s):
@@ -91,9 +98,14 @@ class FullResponseBodyAddon:
 class ResponseBodyAddon:
     @command.command("bs")
     def do(self) -> None:
-        ctx.master.commands.execute("cut.clip @focus response.content")
-        format_json_human()
-        ctx.log.alert("Copied response body to clipboard")
+        copy_response_body()
+
+
+# alias
+class ResponseBodyAddon2:
+    @command.command("resp")
+    def do(self) -> None:
+        copy_response_body()
 
 
 class KeyBindingAddon:
@@ -134,6 +146,7 @@ addons = [
     CurlAddon(),
     UrlAddon(),
     RequestBodyAddon(),
+    ResponseBodyAddon2(),
     ResponseBodyAddon(),
     KeyBindingAddon(),
     QuitAddon(),
