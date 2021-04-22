@@ -92,7 +92,7 @@ class FullResponseBodyAddon:
             # trimmed to not copy huge responses
             response = pyperclip.paste()
             if len(response) >= 2100:
-                response = response[:2100] + "\n..."
+                response = response[:2100] + "..."
 
             ctx.master.commands.execute("cut.clip @focus request.timestamp_start")
             start = pyperclip.paste()
