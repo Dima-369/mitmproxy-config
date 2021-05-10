@@ -88,7 +88,7 @@ class RequestBodyAddon:
             ctx.log.alert("Copied request body to clipboard")
         except Exception:
             ctx.master.commands.execute("cut.clip @focus request.content")
-            ctx.log.alert("Copied nonJSON request body to clipboard")
+            ctx.log.alert("Copied non-JSON request body to clipboard")
 
 
 class FullResponseBodyAddon:
