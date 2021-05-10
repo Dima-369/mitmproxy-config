@@ -25,6 +25,16 @@ def copy_response_body():
         ctx.log.alert("Copied non-JSON response body to clipboard")
 
 
+def get_time_from_timestamps():
+    ctx.master.commands.execute(
+        "cut.clip @focus request.timestamp_start")
+    start = pyperclip.paste()
+    ctx.master.commands.execute(
+        "cut.clip @focus response.timestamp_end")
+    end = pyperclip.paste()
+    return float(end) - float(start)
+
+
 def beautify_curl(s):
     parts = shlex.split(s)
     output = parts[0] + " \\\n"
@@ -79,16 +89,6 @@ class RequestBodyAddon:
         except Exception:
             ctx.master.commands.execute("cut.clip @focus request.content")
             ctx.log.alert("Copied nonJSON request body to clipboard")
-
-
-def get_time_from_timestamps():
-    ctx.master.commands.execute(
-        "cut.clip @focus request.timestamp_start")
-    start = pyperclip.paste()
-    ctx.master.commands.execute(
-        "cut.clip @focus response.timestamp_end")
-    end = pyperclip.paste()
-    return float(end) - float(start)
 
 
 class FullResponseBodyAddon:
