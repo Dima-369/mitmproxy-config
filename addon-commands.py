@@ -1,14 +1,13 @@
-from mitmproxy import command
-from mitmproxy import ctx
-from mitmproxy import flow
+import json
+import re
+import shlex
 import typing
-
 from urllib.parse import unquote
 
 import pyperclip
-import re
-import json
-import shlex
+from mitmproxy import command
+from mitmproxy import ctx
+from mitmproxy import flow
 
 
 def format_json_human():
@@ -17,12 +16,13 @@ def format_json_human():
 
 
 def copy_response_body():
+    ctx.master.commands.execute("cut.clip @focus response.content")
     try:
-        ctx.master.commands.execute("cut.clip @focus response.content")
         format_json_human()
-        ctx.log.alert("Copied response body to clipboard")
-    except Exception as e:
-        ctx.log.error(e)
+        ctx.log.alert("Copied JSON response body to clipboard")
+    except Exception:
+        ctx.master.commands.execute("cut.clip @focus response.content")
+        ctx.log.alert("Copied non-JSON response body to clipboard")
 
 
 def beautify_curl(s):
@@ -76,36 +76,55 @@ class RequestBodyAddon:
             ctx.master.commands.execute("cut.clip @focus request.content")
             format_json_human()
             ctx.log.alert("Copied request body to clipboard")
-        except Exception as e:
-            ctx.log.error(e)
+        except Exception:
+            ctx.master.commands.execute("cut.clip @focus request.content")
+            ctx.log.alert("Copied nonJSON request body to clipboard")
+
+
+def get_time_from_timestamps():
+    ctx.master.commands.execute(
+        "cut.clip @focus request.timestamp_start")
+    start = pyperclip.paste()
+    ctx.master.commands.execute(
+        "cut.clip @focus response.timestamp_end")
+    end = pyperclip.paste()
+    return float(end) - float(start)
 
 
 class FullResponseBodyAddon:
     @command.command("a")
     def do(self) -> None:
-        try:
-            ctx.master.commands.execute("cut.clip @focus request.url")
-            url = pyperclip.paste()
+        ctx.master.commands.execute("cut.clip @focus request.url")
+        url = pyperclip.paste()
 
+        try:
             ctx.master.commands.execute("cut.clip @focus response.content")
             format_json_human()
+
             # trimmed to not copy huge responses
             response = pyperclip.paste()
             if len(response) >= 2100:
                 response = response[:2100] + "..."
 
-            ctx.master.commands.execute("cut.clip @focus request.timestamp_start")
-            start = pyperclip.paste()
-            ctx.master.commands.execute("cut.clip @focus response.timestamp_end")
-            end = pyperclip.paste()
-            time = float(end) - float(start)
-
+            time = get_time_from_timestamps()
             pyperclip.copy(url + " took " + "{:.2f}".format(time) +
                            "s to return:\n\n```json\n" + response + "\n```")
             ctx.log.alert(
                 "Copied URL, response time and body in ```json to clipboard")
-        except Exception as e:
-            ctx.log.error(e)
+        except Exception:
+            ctx.master.commands.execute("cut.clip @focus response.content")
+
+            # trimmed to not copy huge responses
+            response = pyperclip.paste()
+            if len(response) >= 2100:
+                response = response[:2100] + "..."
+
+            time = get_time_from_timestamps()
+            pyperclip.copy(url + " took " + "{:.2f}".format(time) +
+                           "s to return:\n\n```\n" + response + "\n```")
+            ctx.log.alert(
+                "Copied URL, response time and "
+                "non-JSON body in ``` to clipboard")
 
 
 class ResponseBodyAddon:
