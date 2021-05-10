@@ -1,3 +1,25 @@
 #+begin_src bash :results output silent
 git clone https://github.com/Gira-X/mitmproxy-config.git ~/.mitmproxy
 #+end_src
+
+In fish shell I am using this nice function to toggle the proxy system-wide.
+
+#+begin_src fish
+function mi
+    sudo networksetup -setwebproxy 'Thunderbolt Ethernet' 127.0.0.1 9090
+    sudo networksetup -setwebproxy 'HUAWEI Mobile' 127.0.0.1 9090
+    sudo networksetup -setwebproxy 'Wi-fi' 127.0.0.1 9090
+    
+	sudo networksetup -setwebproxystate 'Thunderbolt Ethernet' on
+	sudo networksetup -setwebproxystate 'HUAWEI Mobile' on
+	sudo networksetup -setwebproxystate 'Wi-fi' on
+    
+    mitmproxy -p 9090 -s ~/.mitmproxy/addon-commands.py
+    
+    sudo networksetup -setwebproxystate 'Thunderbolt Ethernet' off
+    sudo networksetup -setwebproxystate 'HUAWEI Mobile' off
+    sudo networksetup -setwebproxystate 'Wi-fi' off
+    
+    echo "Disabled proxy"
+end
+#+end_src
