@@ -89,6 +89,26 @@ class UrlAddon:
         ctx.log.alert("Copied URL to clipboard")
 
 
+class ShortUrlAddon:
+    @command.command("url")
+    def do(self) -> None:
+        """Copy the method plus the URL with the base cut off.
+
+        Example: GET printouts/printhours.pdf?personalNo=365
+        """
+        ctx.master.commands.execute("cut.clip @focus request.url")
+        raw_url = unquote(pyperclip.paste())
+
+        last = "/index.php/"
+        url = raw_url[raw_url.index(last) + len(last):]
+
+        ctx.master.commands.execute("cut.clip @focus request.method")
+        method = pyperclip.paste()
+        pyperclip.copy(method + " " + url)
+
+        ctx.log.alert("Copied to clipboard: " + method + " " + url)
+
+
 class AllResponseBodyAddon:
     @command.command("a")
     def do(self) -> None:
@@ -142,9 +162,6 @@ class FlowResumeAddon:
         ctx.master.commands.execute("flow.resume @focus")
 
 
-# todo try out https://docs.mitmproxy.org/stable/overview-features/#map-local
-
-
 class InterceptAddon:
     @command.command("intercept.inner")
     def addheader(self, flows: typing.Sequence[flow.Flow]) -> None:
@@ -161,6 +178,7 @@ class InterceptAddon:
 addons = [
     CurlAddon(),
     UrlAddon(),
+    ShortUrlAddon(),
     RequestBodyAddon(),
     ResponseBodyAddon(),
     KeyBindingAddon(),

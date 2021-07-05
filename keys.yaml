@@ -17,11 +17,18 @@
 - key: "a"
   ctx: ["flowview", "flowlist", "help", "keybindings"]
   cmd: console.command
-- key: "ctrl d"
-  ctx: ["global"]
+- key: "m"
+  ctx: ["global", "flowview"]
   cmd: console.nav.pagedown
-- key: "ctrl u"
-  ctx: ["global"]
+- key: "v"
+  ctx: ["global", "flowview"]
   cmd: console.nav.pageup
+
+# - key: "ctrl d"
+#   ctx: ["global"]
+#   cmd: console.nav.pagedown
+# - key: "ctrl u"
+#   ctx: ["global"]
+#   cmd: console.nav.pageup
 
 
