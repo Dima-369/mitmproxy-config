@@ -92,15 +92,16 @@ class UrlAddon:
 class ShortUrlAddon:
     @command.command("url")
     def do(self) -> None:
-        """Copy the method plus the URL with the base cut off.
+        """Copy the method plus the URL with the base and the params cut off.
 
-        Example: GET printouts/printhours.pdf?personalNo=365
+        Example: GET printouts/printhours.pdf
         """
         ctx.master.commands.execute("cut.clip @focus request.url")
         raw_url = unquote(pyperclip.paste())
 
         last = "/index.php/"
         url = raw_url[raw_url.index(last) + len(last):]
+        url = url[:url.index("?")]
 
         ctx.master.commands.execute("cut.clip @focus request.method")
         method = pyperclip.paste()
