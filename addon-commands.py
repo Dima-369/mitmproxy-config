@@ -101,7 +101,8 @@ class ShortUrlAddon:
 
         last = "/index.php/"
         url = raw_url[raw_url.index(last) + len(last):]
-        url = url[:url.index("?")]
+        if "?" in url:
+            url = url[:url.index("?")]
 
         ctx.master.commands.execute("cut.clip @focus request.method")
         method = pyperclip.paste()
