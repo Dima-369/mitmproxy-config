@@ -100,9 +100,12 @@ class ShortUrlAddon:
         raw_url = unquote(pyperclip.paste())
 
         last = "/index.php/"
-        url = raw_url[raw_url.index(last) + len(last):]
-        if "?" in url:
-            url = url[:url.index("?")]
+        if last in raw_url:
+            url = raw_url[raw_url.index(last) + len(last):]
+            if "?" in url:
+                url = url[:url.index("?")]
+        else:
+            url = raw_url
 
         ctx.master.commands.execute("cut.clip @focus request.method")
         method = pyperclip.paste()
