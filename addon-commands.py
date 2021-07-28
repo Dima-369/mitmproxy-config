@@ -175,7 +175,7 @@ class InterceptAddon:
             ctx.master.commands.execute(
                 f"console.command set intercept '~u {url} & ~s'")
 
-    @command.command("t")
+    @command.command("cept")
     def do(self) -> None:
         ctx.master.commands.execute("intercept.inner @focus")
 
