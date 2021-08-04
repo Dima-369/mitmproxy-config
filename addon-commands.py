@@ -1,13 +1,17 @@
 import json
+import os
 import re
 import shlex
 import typing
+from pathlib import Path
+import sexpdata
 from urllib.parse import unquote
 
 import pyperclip
 from mitmproxy import command
 from mitmproxy import ctx
 from mitmproxy import flow
+from mitmproxy import http
 
 
 def get_status_code():
@@ -121,11 +125,11 @@ class AllResponseBodyAddon:
         code = get_status_code()
         time = get_time_from_timestamps()
         response = get_response_content_in_blocks()
-        pyperclip.copy("```bash\n" + curl + "\n```\n\n" +
-                       "Took " + "{:.2f}".format(time) + "s with " +
-                       "status code " + code + " to return:\n\n" +
-                       response)
-        ctx.log.alert("Copied cURL, response body and status code to clipboard")
+        pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
+                       "{:.2f}".format(time) + "s with " + "status code " +
+                       code + " to return:\n\n" + response)
+        ctx.log.alert(
+            "Copied cURL, response body and status code to clipboard")
 
 
 # request.text or request.raw_content also seem to work
@@ -180,7 +184,32 @@ class InterceptAddon:
         ctx.master.commands.execute("intercept.inner @focus")
 
 
+# interaction with Emacs/Common Lisp for automated
+# test cases when used together with Selenium
+class WriteFlowsToFileSystem:
+    def response(self, flow: http.HTTPFlow) -> None:
+        sexp_file = Path.home() / ".cache/mitmproxy-flows.lisp"
+        sexp = []
+        if os.path.isfile(sexp_file):
+            # strip leading quote for sexpdata
+            sexp = sexpdata.loads(Path(sexp_file).read_text()[1:])
+        else:
+            # create empty file
+            open(sexp_file, 'a').close()
+
+        obj = {}
+        obj['url'] = flow.request.pretty_url
+        obj['status-code'] = flow.response.status_code
+        obj['request-content'] = flow.request.content.decode()
+        obj['response-content'] = flow.response.content.decode()
+        sexp.append(obj)
+
+        # prepend a quote for valid Lisp code
+        Path(sexp_file).write_text("'" + sexpdata.dumps(sexp))
+
+
 addons = [
+    WriteFlowsToFileSystem(),
     CurlAddon(),
     UrlAddon(),
     ShortUrlAddon(),
