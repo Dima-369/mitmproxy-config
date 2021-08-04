@@ -2,7 +2,7 @@
 git clone https://github.com/Gira-X/mitmproxy-config.git ~/.mitmproxy
 #+end_src
 
-In fish shell I am using this nice function to toggle the proxy system-wide.
+In =fish shell= I am using this function to toggle the proxy system-wide for macOS which works with =XAMPP=.
 
 #+begin_src fish
 function mi
