@@ -187,28 +187,68 @@ class InterceptAddon:
 # interaction with Emacs/Common Lisp for automated
 # test cases when used together with Selenium
 class WriteFlowsToFileSystem:
+    def should_persist(self, flow: http.HTTPFlow) -> bool:
+        return flow.request.host == "api.baubuddy.de" and False
+
+    def get_pretty_json(self, raw: str) -> str:
+        try:
+            return json.dumps(json.loads(raw), indent=2)
+        except Exception:
+            return raw
+
     def response(self, flow: http.HTTPFlow) -> None:
-        sexp_file = Path.home() / ".cache/mitmproxy-flows.lisp"
-        sexp = []
-        if os.path.isfile(sexp_file):
-            # strip leading quote for sexpdata
-            sexp = sexpdata.loads(Path(sexp_file).read_text()[1:])
-        else:
-            # create empty file
-            open(sexp_file, 'a').close()
+        if self.should_persist(flow):
+            sexp_file = Path.home() / ".cache/mitmproxy-flows.lisp"
+            sexp = []
+            if os.path.isfile(sexp_file):
+                text = Path(sexp_file).read_text()
+                if text:
+                    # strip leading quote for sexpdata
+                    text = text[1:]
+                sexp = sexpdata.loads(text)
+            else:
+                # create empty file
+                open(sexp_file, 'a').close()
 
-        obj = {}
-        obj['url'] = flow.request.pretty_url
-        obj['status-code'] = flow.response.status_code
-        obj['request-content'] = flow.request.content.decode()
-        obj['response-content'] = flow.response.content.decode()
-        sexp.append(obj)
+            obj = {}
+            obj['url'] = flow.request.pretty_url
+            obj['status-code'] = flow.response.status_code
+            obj['request-content'] = \
+                self.get_pretty_json(flow.request.content.decode())
+            obj['response-content'] = \
+                self.get_pretty_json(flow.response.content.decode())
+            sexp.append(obj)
 
-        # prepend a quote for valid Lisp code
-        Path(sexp_file).write_text("'" + sexpdata.dumps(sexp))
+            # prepend a quote for valid Lisp code
+            Path(sexp_file).write_text("'" + sexpdata.dumps(sexp))
+
+
+# because some requests just take too long :/
+class NopeOutRequests:
+    # for the Dashboard
+    filter_urls = \
+        ["api.baubuddy.de/int/index.php/v2/reports/liveTicker?top=10",
+         "api.baubuddy.de/int/index.php/v2/reports/statisticsForDashboard"]
+
+    def request(self, flow: http.HTTPFlow) -> None:
+        should_filter_url = False
+        for f in self.filter_urls:
+            if (f in flow.request.pretty_url):
+                should_filter_url = True
+                break
+
+        if should_filter_url:
+            flow.request.url = "http://api.baubuddy.de/int/" + \
+                "index.php/v1/nope"
+
+    def response(self, flow: http.HTTPFlow) -> None:
+        if (flow.request.pretty_url ==
+                "http://api.baubuddy.de/int/index.php/v1/nope"):
+            flow.response.status_code = 503
 
 
 addons = [
+    NopeOutRequests(),
     WriteFlowsToFileSystem(),
     CurlAddon(),
     UrlAddon(),
