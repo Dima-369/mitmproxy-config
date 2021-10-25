@@ -229,6 +229,8 @@ class NopeOutRequests:
     filter_urls = \
         ["api.baubuddy.de/int/index.php/v2/reports/liveTicker?top=10",
          "api.baubuddy.de/int/index.php/v2/reports/statisticsForDashboard"]
+    # spam Google instead of Vero API because it returns rather fast ;)
+    redirect_to = "https://www.google.de/nope"
 
     def request(self, flow: http.HTTPFlow) -> None:
         should_filter_url = False
@@ -238,13 +240,12 @@ class NopeOutRequests:
                 break
 
         if should_filter_url:
-            flow.request.url = "http://api.baubuddy.de/int/" + \
-                "index.php/v1/nope"
+            flow.request.url = self.redirect_to
 
     def response(self, flow: http.HTTPFlow) -> None:
-        if (flow.request.pretty_url ==
-                "http://api.baubuddy.de/int/index.php/v1/nope"):
+        if (flow.request.pretty_url == self.redirect_to):
             flow.response.status_code = 503
+            flow.response.text = "{}"
 
 
 addons = [
