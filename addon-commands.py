@@ -3,6 +3,7 @@ import json
 import os
 import re
 import shlex
+import subprocess
 import typing
 from pathlib import Path
 from urllib.parse import unquote, urljoin, urlparse
@@ -309,7 +310,8 @@ class CreateLocal:
             if not os.path.exists(local_dir):
                 os.makedirs(local_dir)
             with open(local_file, 'w+') as f:
-                f.write(content)
+                f.write(json.dumps(json.loads(content), indent=2))
+            subprocess.run('emacsclient -n "' + local_file + '"', shell=True)
         else:
             ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
 
