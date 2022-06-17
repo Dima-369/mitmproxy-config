@@ -1,17 +1,21 @@
+import hashlib
 import json
 import os
 import re
 import shlex
 import typing
 from pathlib import Path
-import sexpdata
-from urllib.parse import unquote
+from urllib.parse import unquote, urljoin, urlparse
 
 import pyperclip
+import sexpdata
 from mitmproxy import command
 from mitmproxy import ctx
 from mitmproxy import flow
 from mitmproxy import http
+
+map_local_base_url = "http://api.baubuddy.de/int/index.php/"
+map_local_dir = "/Users/Gira/vero/mitmproxy-local/"
 
 
 def get_status_code():
@@ -132,6 +136,19 @@ class AllResponseBodyAddon:
             "Copied cURL, response body and status code to clipboard")
 
 
+class AllResponseWithoutBodyAddon:
+    @command.command("ab")
+    def do(self) -> None:
+        curl = get_curl_formatted()
+        code = get_status_code()
+        time = get_time_from_timestamps()
+        pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
+                       "{:.2f}".format(time) + "s with " + "status code " +
+                       code + ".")
+        ctx.log.alert(
+            "Copied cURL  and status code to clipboard")
+
+
 # request.text or request.raw_content also seem to work
 class RequestBodyAddon:
     @command.command("req")
@@ -227,9 +244,12 @@ class WriteFlowsToFileSystem:
 class NopeOutRequests:
     # for the Dashboard
     filter_urls = \
-        ["api.baubuddy.de/int/index.php/v2/reports/liveTicker?top=10",
-         "api.baubuddy.de/int/index.php/v2/reports/statisticsForDashboard"]
-    # spam Google instead of Vero API because it returns rather fast ;)
+        [
+            "api.baubuddy.de/int/index.php/v2/reports/liveTicker?top=10",
+            # "api.baubuddy.de/int/index.php/login/refresh",
+            # "api.baubuddy.de/int/index.php/v2/reports/statisticsForDashboard",
+        ]
+    # spam Google instead of Vero API because Google has a fast response time ;)
     redirect_to = "https://www.google.de/nope"
 
     def request(self, flow: http.HTTPFlow) -> None:
@@ -248,9 +268,57 @@ class NopeOutRequests:
             flow.response.text = "{}"
 
 
+def get_url_without_parameters(url):
+    return urljoin(url, urlparse(url).path)
+
+
+def create_url_parameters_hash(url):
+    if url:
+        return ' ' + hashlib.sha256(urlparse(url).query.encode('utf-8')).hexdigest()[0:12]
+    return ''
+
+
+def map_api_url_to_local_path(url):
+    without_parameters = get_url_without_parameters(url)
+    after_base = without_parameters.replace(map_local_base_url, '')
+    return os.path.join(map_local_dir, after_base) + create_url_parameters_hash(url) + ".json"
+
+
+class MapLocalRequests:
+    """ Map to local response bodies from a directory. """
+
+    def response(self, flow: http.HTTPFlow) -> None:
+        url = flow.request.pretty_url
+        local_file = map_api_url_to_local_path(url)
+        if os.path.exists(local_file):
+            with open(local_file) as f:
+                flow.response.text = f.read()
+
+
+class CreateLocal:
+    @command.command("local")
+    def do(self) -> None:
+        ctx.master.commands.execute("cut.clip @focus request.url")
+        url = pyperclip.paste()
+
+        if map_local_base_url in url:
+            ctx.master.commands.execute("cut.clip @focus response.content")
+            content = pyperclip.paste()
+            local_file = map_api_url_to_local_path(url)
+            local_dir = os.path.dirname(local_file)
+            if not os.path.exists(local_dir):
+                os.makedirs(local_dir)
+            with open(local_file, 'w+') as f:
+                f.write(content)
+        else:
+            ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
+
+
 addons = [
-    NopeOutRequests(),
-    WriteFlowsToFileSystem(),
+    # NopeOutRequests(),
+    # WriteFlowsToFileSystem(),
+    MapLocalRequests(),
+    CreateLocal(),
     CurlAddon(),
     UrlAddon(),
     ShortUrlAddon(),
@@ -260,5 +328,6 @@ addons = [
     QuitAddon(),
     InterceptAddon(),
     FlowResumeAddon(),
-    AllResponseBodyAddon()
+    AllResponseBodyAddon(),
+    AllResponseWithoutBodyAddon(),
 ]
