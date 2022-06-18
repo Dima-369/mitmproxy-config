@@ -8,11 +8,16 @@ import typing
 from pathlib import Path
 from urllib.parse import unquote, urljoin, urlparse
 
+# noinspection PyUnresolvedReferences
 import pyperclip
 import sexpdata
+# noinspection PyUnresolvedReferences
 from mitmproxy import command
+# noinspection PyUnresolvedReferences
 from mitmproxy import ctx
+# noinspection PyUnresolvedReferences
 from mitmproxy import flow
+# noinspection PyUnresolvedReferences
 from mitmproxy import http
 
 map_local_base_url = "http://api.baubuddy.de/int/index.php/"
@@ -30,6 +35,7 @@ def get_status_code():
 def get_response_content_in_blocks():
     ctx.master.commands.execute("cut.clip @focus response.content")
     raw = pyperclip.paste()
+    # noinspection PyBroadException
     try:
         return "```json\n" + \
                trim_response_content(json.dumps(json.loads(raw), indent=2)) + \
@@ -163,6 +169,7 @@ class ResponseBodyAddon:
     def do(self) -> None:
         ctx.master.commands.execute("cut.clip @focus response.content")
         response = pyperclip.paste()
+        # noinspection PyBroadException
         try:
             response = json.dumps(json.loads(response), indent=2)
             pyperclip.copy(response)
@@ -205,10 +212,13 @@ class InterceptAddon:
 # interaction with Emacs/Common Lisp for automated
 # test cases when used together with Selenium
 class WriteFlowsToFileSystem:
-    def should_persist(self, flow: http.HTTPFlow) -> bool:
+    @staticmethod
+    def should_persist(flow: http.HTTPFlow) -> bool:
         return flow.request.host == "api.baubuddy.de" and False
 
-    def get_pretty_json(self, raw: str) -> str:
+    @staticmethod
+    def get_pretty_json(raw: str) -> str:
+        # noinspection PyBroadException
         try:
             return json.dumps(json.loads(raw), indent=2)
         except Exception:
@@ -228,13 +238,12 @@ class WriteFlowsToFileSystem:
                 # create empty file
                 open(sexp_file, 'a').close()
 
-            obj = {}
-            obj['url'] = flow.request.pretty_url
-            obj['status-code'] = flow.response.status_code
-            obj['request-content'] = \
-                self.get_pretty_json(flow.request.content.decode())
-            obj['response-content'] = \
-                self.get_pretty_json(flow.response.content.decode())
+            obj = {
+                'url': flow.request.pretty_url,
+                'status-code': flow.response.status_code,
+                'request-content': self.get_pretty_json(flow.request.content.decode()),
+                'response-content': self.get_pretty_json(flow.response.content.decode())
+            }
             sexp.append(obj)
 
             # prepend a quote for valid Lisp code
@@ -256,7 +265,7 @@ class NopeOutRequests:
     def request(self, flow: http.HTTPFlow) -> None:
         should_filter_url = False
         for f in self.filter_urls:
-            if (f in flow.request.pretty_url):
+            if f in flow.request.pretty_url:
                 should_filter_url = True
                 break
 
@@ -264,7 +273,7 @@ class NopeOutRequests:
             flow.request.url = self.redirect_to
 
     def response(self, flow: http.HTTPFlow) -> None:
-        if (flow.request.pretty_url == self.redirect_to):
+        if flow.request.pretty_url == self.redirect_to:
             flow.response.status_code = 503
             flow.response.text = "{}"
 
@@ -288,32 +297,51 @@ def map_api_url_to_local_path(url):
 class MapLocalRequests:
     """ Map to local response bodies from a directory. """
 
-    def response(self, flow: http.HTTPFlow) -> None:
+    @staticmethod
+    def request(flow: http.HTTPFlow) -> None:
         url = flow.request.pretty_url
         local_file = map_api_url_to_local_path(url)
+        local_header_file = local_file.replace('.json', ' headers.json')
+
         if os.path.exists(local_file):
             with open(local_file) as f:
-                flow.response.text = f.read()
+                with open(local_header_file) as f_headers:
+                    json_headers = json.loads(f_headers.read())
+                    flow.response = http.Response.make(200, f.read(), json_headers)
+
+
+def process_local_flow(flow):
+    url = flow.request.pretty_url
+
+    if map_local_base_url in url:
+        content = flow.response.content
+
+        local_file = map_api_url_to_local_path(url)
+        local_header_file = local_file.replace('.json', ' headers.json')
+        local_dir = os.path.dirname(local_file)
+
+        if not os.path.exists(local_dir):
+            os.makedirs(local_dir)
+
+        with open(local_file, 'w+') as f:
+            f.write(json.dumps(json.loads(content), indent=2))
+
+        response_headers = {}
+        for k, v in flow.response.headers.items():
+            response_headers[k] = v
+        with open(local_header_file, 'w+') as f:
+            f.write(json.dumps(response_headers, indent=2))
+
+        subprocess.run('emacsclient -n "' + local_file + '"', shell=True)
+    else:
+        ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
 
 
 class CreateLocal:
-    @command.command("local")
-    def do(self) -> None:
-        ctx.master.commands.execute("cut.clip @focus request.url")
-        url = pyperclip.paste()
-
-        if map_local_base_url in url:
-            ctx.master.commands.execute("cut.clip @focus response.content")
-            content = pyperclip.paste()
-            local_file = map_api_url_to_local_path(url)
-            local_dir = os.path.dirname(local_file)
-            if not os.path.exists(local_dir):
-                os.makedirs(local_dir)
-            with open(local_file, 'w+') as f:
-                f.write(json.dumps(json.loads(content), indent=2))
-            subprocess.run('emacsclient -n "' + local_file + '"', shell=True)
-        else:
-            ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
+    @command.command("l")
+    def do(self, flows: typing.Sequence[flow.Flow]) -> None:
+        for flow in flows:
+            process_local_flow(flow)
 
 
 addons = [
