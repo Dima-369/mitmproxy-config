@@ -4,7 +4,7 @@ import os
 import re
 import shlex
 import subprocess
-import typing
+from collections.abc import Sequence
 from pathlib import Path
 from urllib.parse import unquote, urljoin, urlparse
 
@@ -193,7 +193,7 @@ class FlowResumeAddon:
 
 class InterceptAddon:
     @command.command("intercept.inner")
-    def addheader(self, flows: typing.Sequence[flow.Flow]) -> None:
+    def addheader(self, flows: Sequence[flow.Flow]) -> None:
         for f in flows:
             url = re.escape(f.request.url)
             ctx.master.commands.execute(
@@ -307,7 +307,7 @@ class MapLocalRequests:
 
 class CreateLocal:
     @command.command("local")
-    def do(self, flows: typing.Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[flow.Flow]) -> None:
         for flow in flows:
             url = flow.request.pretty_url
 
@@ -334,6 +334,8 @@ class CreateLocal:
             else:
                 ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
 
+
+class CreateLocalKey:
     @command.command("l")
     def do(self) -> None:
         ctx.master.commands.execute("local @focus")
@@ -341,7 +343,7 @@ class CreateLocal:
 
 class DeleteLocalRequest:
     @command.command("localdelete")
-    def do(self, flows: typing.Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[flow.Flow]) -> None:
         for flow in flows:
             url = flow.request.pretty_url
 
@@ -349,11 +351,17 @@ class DeleteLocalRequest:
                 local_file = map_api_url_to_local_path(url)
                 local_header_file = local_file.replace('.json', ' headers.json')
 
-                os.remove(local_file)
-                os.remove(local_header_file)
+                try:
+                    os.remove(local_file)
+                    os.remove(local_header_file)
+                    ctx.log.alert('Deleted ' + local_file + ' and its headers file')
+                except FileNotFoundError:
+                    ctx.log.alert('Local mapping files do not exist!')
             else:
                 ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
 
+
+class DeleteLocalRequestKey:
     @command.command("ld")
     def do(self) -> None:
         ctx.master.commands.execute("localdelete @focus")
@@ -364,7 +372,9 @@ addons = [
     # WriteFlowsToFileSystem(),
     MapLocalRequests(),
     DeleteLocalRequest(),
+    DeleteLocalRequestKey(),
     CreateLocal(),
+    CreateLocalKey(),
     CurlAddon(),
     UrlAddon(),
     ShortUrlAddon(),
