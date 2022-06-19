@@ -8,16 +8,11 @@ import typing
 from pathlib import Path
 from urllib.parse import unquote, urljoin, urlparse
 
-# noinspection PyUnresolvedReferences
 import pyperclip
 import sexpdata
-# noinspection PyUnresolvedReferences
 from mitmproxy import command
-# noinspection PyUnresolvedReferences
 from mitmproxy import ctx
-# noinspection PyUnresolvedReferences
 from mitmproxy import flow
-# noinspection PyUnresolvedReferences
 from mitmproxy import http
 
 map_local_base_url = "http://api.baubuddy.de/int/index.php/"
@@ -310,44 +305,65 @@ class MapLocalRequests:
                     flow.response = http.Response.make(200, f.read(), json_headers)
 
 
-def process_local_flow(flow):
-    url = flow.request.pretty_url
-
-    if map_local_base_url in url:
-        content = flow.response.content
-
-        local_file = map_api_url_to_local_path(url)
-        local_header_file = local_file.replace('.json', ' headers.json')
-        local_dir = os.path.dirname(local_file)
-
-        if not os.path.exists(local_dir):
-            os.makedirs(local_dir)
-
-        with open(local_file, 'w+') as f:
-            f.write(json.dumps(json.loads(content), indent=2))
-
-        response_headers = {}
-        for k, v in flow.response.headers.items():
-            response_headers[k] = v
-        with open(local_header_file, 'w+') as f:
-            f.write(json.dumps(response_headers, indent=2))
-
-        subprocess.run('emacsclient -n "' + local_file + '"', shell=True)
-    else:
-        ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
-
-
 class CreateLocal:
-    @command.command("l")
+    @command.command("local")
     def do(self, flows: typing.Sequence[flow.Flow]) -> None:
         for flow in flows:
-            process_local_flow(flow)
+            url = flow.request.pretty_url
+
+            if map_local_base_url in url:
+                content = flow.response.content
+
+                local_file = map_api_url_to_local_path(url)
+                local_header_file = local_file.replace('.json', ' headers.json')
+                local_dir = os.path.dirname(local_file)
+
+                if not os.path.exists(local_dir):
+                    os.makedirs(local_dir)
+
+                with open(local_file, 'w+') as f:
+                    f.write(json.dumps(json.loads(content), indent=2))
+
+                response_headers = {}
+                for k, v in flow.response.headers.items():
+                    response_headers[k] = v
+                with open(local_header_file, 'w+') as f:
+                    f.write(json.dumps(response_headers, indent=2))
+
+                subprocess.run('emacsclient -n "' + local_file + '"', shell=True)
+            else:
+                ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
+
+    @command.command("l")
+    def do(self) -> None:
+        ctx.master.commands.execute("local @focus")
+
+
+class DeleteLocalRequest:
+    @command.command("localdelete")
+    def do(self, flows: typing.Sequence[flow.Flow]) -> None:
+        for flow in flows:
+            url = flow.request.pretty_url
+
+            if map_local_base_url in url:
+                local_file = map_api_url_to_local_path(url)
+                local_header_file = local_file.replace('.json', ' headers.json')
+
+                os.remove(local_file)
+                os.remove(local_header_file)
+            else:
+                ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
+
+    @command.command("ld")
+    def do(self) -> None:
+        ctx.master.commands.execute("localdelete @focus")
 
 
 addons = [
     # NopeOutRequests(),
     # WriteFlowsToFileSystem(),
     MapLocalRequests(),
+    DeleteLocalRequest(),
     CreateLocal(),
     CurlAddon(),
     UrlAddon(),
