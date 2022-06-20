@@ -3,6 +3,7 @@ import json
 import os
 import re
 import shlex
+import shutil
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
@@ -95,8 +96,9 @@ class UrlAddon:
     @command.command("u")
     def do(self) -> None:
         ctx.master.commands.execute("cut.clip @focus request.url")
-        pyperclip.copy(unquote(pyperclip.paste()))
-        ctx.log.alert("Copied URL to clipboard")
+        url = unquote(pyperclip.paste())
+        pyperclip.copy(url)
+        ctx.log.alert("Copied to clipboard: " + url)
 
 
 class ShortUrlAddon:
@@ -274,12 +276,19 @@ class NopeOutRequests:
 
 
 def get_url_without_parameters(url):
-    return urljoin(url, urlparse(url).path)
+    path = urljoin(url, urlparse(url).path)
+    # drop /v1/ for a cleaner file system
+    path = path.replace("/index.php/v1/", "/index.php/")
+    # strip trailing / to be able to create a file on file system
+    if path.endswith('/'):
+        return path[:-1]
+    return path
 
 
 def create_url_parameters_hash(url):
-    if url:
-        return ' ' + hashlib.sha256(urlparse(url).query.encode('utf-8')).hexdigest()[0:12]
+    query = urlparse(url).query
+    if query:
+        return ' ' + hashlib.sha256(query.encode('utf-8')).hexdigest()[0:12]
     return ''
 
 
@@ -296,18 +305,21 @@ class MapLocalRequests:
     def request(flow: http.HTTPFlow) -> None:
         url = flow.request.pretty_url
         local_file = map_api_url_to_local_path(url)
-        local_header_file = local_file.replace('.json', ' headers.json')
 
         if os.path.exists(local_file):
             with open(local_file) as f:
-                with open(local_header_file) as f_headers:
-                    json_headers = json.loads(f_headers.read())
-                    flow.response = http.Response.make(200, f.read(), json_headers)
+                data = json.loads(f.read())
+                # flow.response = http.Response.make(data['statusCode'], data['response'], data['headers'])
+                flow.response = http.Response.make(
+                    data['statusCode'],
+                    json.dumps(data['response'], indent=2),
+                    data['headers'])
 
 
 class CreateLocal:
     @command.command("local")
     def do(self, flows: Sequence[flow.Flow]) -> None:
+        has_error = False
         for flow in flows:
             url = flow.request.pretty_url
 
@@ -315,24 +327,48 @@ class CreateLocal:
                 content = flow.response.content
 
                 local_file = map_api_url_to_local_path(url)
-                local_header_file = local_file.replace('.json', ' headers.json')
                 local_dir = os.path.dirname(local_file)
 
                 if not os.path.exists(local_dir):
                     os.makedirs(local_dir)
 
-                with open(local_file, 'w+') as f:
-                    f.write(json.dumps(json.loads(content), indent=2))
-
                 response_headers = {}
                 for k, v in flow.response.headers.items():
                     response_headers[k] = v
-                with open(local_header_file, 'w+') as f:
-                    f.write(json.dumps(response_headers, indent=2))
 
-                subprocess.run('emacsclient -n "' + local_file + '"', shell=True)
+                data = {
+                    'response': json.loads(content),
+                    'url': flow.request.pretty_url,
+                    'headers': response_headers,
+                    'statusCode': flow.response.status_code,
+                }
+                with open(local_file, 'w+') as f:
+                    f.write(json.dumps(data, indent=2))
+
+                if len(flows) == 1:
+                    # focus Emacs, open the file without prompting for auto reverts and reload
+                    # the buffer for potential new changes
+                    subprocess.Popen(['emacsclient', '-e',
+                                      """
+                                      (run-at-time nil nil (lambda ()
+                                        (x-focus-frame nil)
+                                        (let (query-about-changed-file)
+                                          (find-file "{0}")
+                                          (revert-buffer-quick)
+                                          (goto-char (point-min)))))
+                                      """.replace('{0}', local_file)],
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
             else:
+                has_error = True
                 ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
+        if not has_error:
+            ctx.log.alert('Saved ' + str(len(flows)) + ' flow(s) to ' + map_local_dir)
+
+
+class CreateAllLocalKey:
+    @command.command("la")
+    def do(self) -> None:
+        ctx.master.commands.execute("local @all")
 
 
 class CreateLocalKey:
@@ -349,12 +385,10 @@ class DeleteLocalRequest:
 
             if map_local_base_url in url:
                 local_file = map_api_url_to_local_path(url)
-                local_header_file = local_file.replace('.json', ' headers.json')
 
                 try:
                     os.remove(local_file)
-                    os.remove(local_header_file)
-                    ctx.log.alert('Deleted ' + local_file + ' and its headers file')
+                    ctx.log.alert('Deleted ' + local_file)
                 except FileNotFoundError:
                     ctx.log.alert('Local mapping files do not exist!')
             else:
@@ -367,14 +401,24 @@ class DeleteLocalRequestKey:
         ctx.master.commands.execute("localdelete @focus")
 
 
+class ClearMappedLocalRequests:
+    @command.command("lc")
+    def do(self) -> None:
+        shutil.rmtree(map_local_dir)
+        os.mkdir(map_local_dir)
+        ctx.log.alert('Deleted everything under ' + map_local_dir)
+
+
 addons = [
     # NopeOutRequests(),
     # WriteFlowsToFileSystem(),
+
     MapLocalRequests(),
-    DeleteLocalRequest(),
-    DeleteLocalRequestKey(),
     CreateLocal(),
-    CreateLocalKey(),
+    DeleteLocalRequest(),
+    DeleteLocalRequest(),
+    ClearMappedLocalRequests(),
+
     CurlAddon(),
     UrlAddon(),
     ShortUrlAddon(),
@@ -386,4 +430,8 @@ addons = [
     FlowResumeAddon(),
     AllResponseBodyAddon(),
     AllResponseWithoutBodyAddon(),
+
+    DeleteLocalRequestKey(),
+    CreateLocalKey(),
+    CreateAllLocalKey(),
 ]
