@@ -320,49 +320,60 @@ class CreateLocal:
     @command.command("local")
     def do(self, flows: Sequence[flow.Flow]) -> None:
         has_error = False
+        single_flow = len(flows) == 1
+        no_response_count = 0
+
         for flow in flows:
-            url = flow.request.pretty_url
+            if flow.response:
+                url = flow.request.pretty_url
+                if map_local_base_url in url:
+                    content = flow.response.content
 
-            if map_local_base_url in url:
-                content = flow.response.content
+                    local_file = map_api_url_to_local_path(url)
+                    local_dir = os.path.dirname(local_file)
 
-                local_file = map_api_url_to_local_path(url)
-                local_dir = os.path.dirname(local_file)
+                    if not os.path.exists(local_dir):
+                        os.makedirs(local_dir)
 
-                if not os.path.exists(local_dir):
-                    os.makedirs(local_dir)
+                    response_headers = {}
+                    for k, v in flow.response.headers.items():
+                        response_headers[k] = v
 
-                response_headers = {}
-                for k, v in flow.response.headers.items():
-                    response_headers[k] = v
+                    data = {
+                        'response': json.loads(content),
+                        'url': flow.request.method + ' ' + flow.request.pretty_url,
+                        'headers': response_headers,
+                        'statusCode': flow.response.status_code,
+                    }
+                    with open(local_file, 'w+') as f:
+                        f.write(json.dumps(data, indent=2))
 
-                data = {
-                    'response': json.loads(content),
-                    'url': flow.request.pretty_url,
-                    'headers': response_headers,
-                    'statusCode': flow.response.status_code,
-                }
-                with open(local_file, 'w+') as f:
-                    f.write(json.dumps(data, indent=2))
-
-                if len(flows) == 1:
-                    # focus Emacs, open the file without prompting for auto reverts and reload
-                    # the buffer for potential new changes
-                    subprocess.Popen(['emacsclient', '-e',
-                                      """
-                                      (run-at-time nil nil (lambda ()
-                                        (x-focus-frame nil)
-                                        (let (query-about-changed-file)
-                                          (find-file "{0}")
-                                          (revert-buffer-quick)
-                                          (goto-char (point-min)))))
-                                      """.replace('{0}', local_file)],
-                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                    if single_flow:
+                        # focus Emacs, open the file without prompting for auto reverts and reload
+                        # the buffer for potential new changes
+                        subprocess.Popen(['emacsclient', '-e',
+                                          """
+                                          (run-at-time nil nil (lambda ()
+                                            (x-focus-frame nil)
+                                            (let (query-about-changed-file)
+                                              (find-file "{0}")
+                                              (revert-buffer-quick)
+                                              (goto-char (point-min)))))
+                                          """.replace('{0}', local_file)],
+                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                else:
+                    if single_flow:
+                        has_error = True
+                        ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
             else:
-                has_error = True
-                ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
+                no_response_count += 1
+
         if not has_error:
-            ctx.log.alert('Saved ' + str(len(flows)) + ' flow(s) to ' + map_local_dir)
+            if no_response_count == 0:
+                ctx.log.alert('Saved ' + str(len(flows)) + ' flow(s) to ' + map_local_dir)
+            else:
+                ctx.log.alert('Saved ' + str(len(flows) - no_response_count) + ' flow(s) to ' + map_local_dir +
+                              ' --- ' + str(no_response_count) + ' flow(s) without response')
 
 
 class CreateAllLocalKey:
