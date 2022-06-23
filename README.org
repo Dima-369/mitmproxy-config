@@ -1,8 +1,89 @@
-#+begin_src bash :results output silent
-git clone https://github.com/Gira-X/mitmproxy-config.git ~/.mitmproxy
+* Warning
+
+This config is tested on my macOS system. It might need some adjustments for other operating systems.
+
+* Command overview
+
+| Command         | Description                                                                                                |
+|-----------------+------------------------------------------------------------------------------------------------------------|
+| local           | Map the flow to the file system. The mapped JSON file can be edited and will be used on consequent access. |
+| l               | Alias for =local @focus=                                                                                     |
+| la              | Alias for =local @all=                                                                                       |
+| localdelete     | Delete the mapped flow on the file system                                                                  |
+| ld              | Alias for =localdelete @focus=                                                                               |
+| lc              | Delete everything in the mapped file system directory                                                      |
+|                 |                                                                                                            |
+| cu              | Copy cURL with ```bash ticks for Markdown formatting                                                       |
+| req             | Copy request body                                                                                          |
+| resp            | Copy response body                                                                                         |
+| u               | Copy full URL                                                                                              |
+| url             | Copy URL from =index.php/= with method like: =GET v1/hours/all=                                                |
+| a               | Copy cURL with the status code, response time and response body                                            |
+| ab              | Copy cURL with the status code and response time                                                           |
+|                 |                                                                                                            |
+| intercept.inner | Create an intercept filter for the current flow                                                            |
+| cept            | Alias for =intercept.inner @focus=                                                                           |
+| r               | Resume intercepted flow                                                                                    |
+|                 |                                                                                                            |
+| k               | View keybindings                                                                                           |
+
+Those commands are invoked first by hitting =:= and then entering any command.
+
+The Markdown formatting is used for quick pasting into GitLab.
+
+* Local Directory Mapping
+
+Use the =local= command to create a JSON file. For instance, if the =local= command is used on =GET settings/wos=, it creates the file ={map_local_dir}/settings/wos.json=.
+
+The =response= value can be changed, just like the =headers= and =statusCode= JSON values. On subsequent API calls, the mapped local file is used instead of the API response, so you do not need to wait for the API response.
+
+The =url= JSON value should not be changed. It is just for debugging.
+
+#+begin_src json
+{
+  "response": {
+    "dkeinkop": "0"
+  },
+  "url": "GET http://api.baubuddy.de/int/index.php/settings/wos",
+  "headers": {
+    "Date": "Thu, 23 Jun 2022 05:06:51 GMT",
+    "Server": "Apache",
+    "Vary": "Accept",
+    "Cache-Control": "no-cache, must-revalidate",
+    "Expires": "0",
+    "X-Powered-By": "Luracast Restler v3.0.0rc5",
+    "Content-Language": "en",
+    "Access-Control-Allow-Origin": "https://web.baubuddy.de",
+    "Content-Length": "16",
+    "Content-Type": "application/json; charset=utf-8"
+  },
+  "statusCode": 200
+}
 #+end_src
 
-In =fish shell= I am using this function to toggle the proxy system-wide for macOS which works with =XAMPP=.
+* Example setup
+
+Clone this repository to =~/.mitmproxy= (or copy only =addon-commands.py=) like this (for macOS and Linux):
+
+#+begin_src bash :results output silent
+git clone https://github.com/Dima-369/mitmproxy-config.git ~/.mitmproxy
+#+end_src
+
+You may optionally also use =config.yaml= or =keys.yaml= if you have the need for them, but they are not that interesting.
+
+** Modify variables in addon-commands.py
+
+Note that you have to manually adjust =map_local_base_url= and =map_local_dir= to your preferences, so the Map Local functionality works.
+
+** Load addon-commands.py
+
+Use =mitmproxy= on port 9090 and load =addon-commands.py= like this:
+
+#+begin_src bash
+mitmproxy -p 9090 -s /path/to/addon-commands.py
+#+end_src
+
+** fish shell function to toggle the proxy system-wide for macOS
 
 #+begin_src fish
 function mi

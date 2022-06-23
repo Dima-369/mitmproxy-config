@@ -6,11 +6,9 @@ import shlex
 import shutil
 import subprocess
 from collections.abc import Sequence
-from pathlib import Path
 from urllib.parse import unquote, urljoin, urlparse
 
 import pyperclip
-import sexpdata
 from mitmproxy import command
 from mitmproxy import ctx
 from mitmproxy import flow
@@ -181,12 +179,6 @@ class KeyBindingAddon:
         ctx.master.commands.execute("console.view.keybindings")
 
 
-class QuitAddon:
-    @command.command("e")
-    def do(self) -> None:
-        ctx.master.commands.execute("console.exit")
-
-
 class FlowResumeAddon:
     @command.command("r")
     def do(self) -> None:
@@ -195,7 +187,7 @@ class FlowResumeAddon:
 
 class InterceptAddon:
     @command.command("intercept.inner")
-    def addheader(self, flows: Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[flow.Flow]) -> None:
         for f in flows:
             url = re.escape(f.request.url)
             ctx.master.commands.execute(
@@ -204,75 +196,6 @@ class InterceptAddon:
     @command.command("cept")
     def do(self) -> None:
         ctx.master.commands.execute("intercept.inner @focus")
-
-
-# interaction with Emacs/Common Lisp for automated
-# test cases when used together with Selenium
-class WriteFlowsToFileSystem:
-    @staticmethod
-    def should_persist(flow: http.HTTPFlow) -> bool:
-        return flow.request.host == "api.baubuddy.de" and False
-
-    @staticmethod
-    def get_pretty_json(raw: str) -> str:
-        # noinspection PyBroadException
-        try:
-            return json.dumps(json.loads(raw), indent=2)
-        except Exception:
-            return raw
-
-    def response(self, flow: http.HTTPFlow) -> None:
-        if self.should_persist(flow):
-            sexp_file = Path.home() / ".cache/mitmproxy-flows.lisp"
-            sexp = []
-            if os.path.isfile(sexp_file):
-                text = Path(sexp_file).read_text()
-                if text:
-                    # strip leading quote for sexpdata
-                    text = text[1:]
-                sexp = sexpdata.loads(text)
-            else:
-                # create empty file
-                open(sexp_file, 'a').close()
-
-            obj = {
-                'url': flow.request.pretty_url,
-                'status-code': flow.response.status_code,
-                'request-content': self.get_pretty_json(flow.request.content.decode()),
-                'response-content': self.get_pretty_json(flow.response.content.decode())
-            }
-            sexp.append(obj)
-
-            # prepend a quote for valid Lisp code
-            Path(sexp_file).write_text("'" + sexpdata.dumps(sexp))
-
-
-# because some requests just take too long :/
-class NopeOutRequests:
-    # for the Dashboard
-    filter_urls = \
-        [
-            "api.baubuddy.de/int/index.php/v2/reports/liveTicker?top=10",
-            # "api.baubuddy.de/int/index.php/login/refresh",
-            # "api.baubuddy.de/int/index.php/v2/reports/statisticsForDashboard",
-        ]
-    # spam Google instead of Vero API because Google has a fast response time ;)
-    redirect_to = "https://www.google.de/nope"
-
-    def request(self, flow: http.HTTPFlow) -> None:
-        should_filter_url = False
-        for f in self.filter_urls:
-            if f in flow.request.pretty_url:
-                should_filter_url = True
-                break
-
-        if should_filter_url:
-            flow.request.url = self.redirect_to
-
-    def response(self, flow: http.HTTPFlow) -> None:
-        if flow.request.pretty_url == self.redirect_to:
-            flow.response.status_code = 503
-            flow.response.text = "{}"
 
 
 def get_url_without_parameters(url):
@@ -421,9 +344,6 @@ class ClearMappedLocalRequests:
 
 
 addons = [
-    # NopeOutRequests(),
-    # WriteFlowsToFileSystem(),
-
     MapLocalRequests(),
     CreateLocal(),
     DeleteLocalRequest(),
@@ -436,7 +356,6 @@ addons = [
     RequestBodyAddon(),
     ResponseBodyAddon(),
     KeyBindingAddon(),
-    QuitAddon(),
     InterceptAddon(),
     FlowResumeAddon(),
     AllResponseBodyAddon(),
