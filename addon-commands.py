@@ -151,26 +151,59 @@ class AllResponseWithoutBodyAddon:
             "Copied cURL  and status code to clipboard")
 
 
-# request.text or request.raw_content also seem to work
+# if is_request is false, it is assumed that this is a request
+def copy_content_as_json(content, is_request):
+    if content == b'':
+        ctx.log.alert("The flow does not have a request body!")
+    else:
+        # noinspection PyBroadException
+        try:
+            as_json = json.dumps(json.loads(content), indent=2)
+            pyperclip.copy(as_json)
+            if is_request:
+                ctx.log.alert("Copied JSON request body to clipboard")
+            else:
+                ctx.log.alert("Copied JSON request body to clipboard")
+        except Exception:
+            pyperclip.copy(content.decode('utf-8'))
+            if is_request:
+                ctx.log.alert("Copied non-JSON request body to clipboard")
+            else:
+                ctx.log.alert("Copied non-JSON response body to clipboard")
+
+
 class RequestBodyAddon:
+    @command.command("copyrequest")
+    def do(self, flows: Sequence[flow.Flow]) -> None:
+        if len(flows) != 1:
+            ctx.log.alert("This can only operate on a single flow!")
+        else:
+            flow = flows[0]
+            content = flow.request.content
+            copy_content_as_json(content, is_request=True)
+
+
+class RequestBodyKey:
     @command.command("req")
     def do(self) -> None:
-        ctx.master.commands.execute("cut.clip @focus request.content")
-        ctx.log.alert("Copied request body to clipboard")
+        ctx.master.commands.execute("copyrequest @focus")
 
 
 class ResponseBodyAddon:
+    @command.command("copyresponse")
+    def do(self, flows: Sequence[flow.Flow]) -> None:
+        if len(flows) != 1:
+            ctx.log.alert("This can only operate on a single flow!")
+        else:
+            flow = flows[0]
+            content = flow.response.content
+            copy_content_as_json(content, is_request=False)
+
+
+class ResponseBodyKey:
     @command.command("resp")
     def do(self) -> None:
-        ctx.master.commands.execute("cut.clip @focus response.content")
-        response = pyperclip.paste()
-        # noinspection PyBroadException
-        try:
-            response = json.dumps(json.loads(response), indent=2)
-            pyperclip.copy(response)
-            ctx.log.alert("Copied JSON response body to clipboard")
-        except Exception:
-            ctx.log.alert("Copied non-JSON response body to clipboard")
+        ctx.master.commands.execute("copyresponse @focus")
 
 
 class KeyBindingAddon:
@@ -364,4 +397,6 @@ addons = [
     DeleteLocalRequestKey(),
     CreateLocalKey(),
     CreateAllLocalKey(),
+    ResponseBodyKey(),
+    RequestBodyKey()
 ]

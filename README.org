@@ -13,11 +13,13 @@ This config is tested on my macOS system. It might need some adjustments for oth
 | ld              | Alias for =localdelete @focus=                                                                               |
 | lc              | Delete everything in the mapped file system directory                                                      |
 |                 |                                                                                                            |
+| copyrequest     | Copy the request body                                                                                      |
+| req             | Alias for =copyrequest @focus=                                                                               |
+| copyresponse    | Copy the response body                                                                                     |
+| resp            | Alias for =copyresponse @focus=                                                                              |
 | cu              | Copy cURL with =```bash= ticks for Markdown formatting                                                       |
-| req             | Copy request body                                                                                          |
-| resp            | Copy response body                                                                                         |
 | u               | Copy full URL                                                                                              |
-| url             | Copy URL behind =index.php/= with the method like: =GET v1/hours/all=                                                |
+| url             | Copy URL behind =index.php/= with the method like: =GET v1/hours/all=                                          |
 | a               | Copy cURL with the status code, response time and response body                                            |
 | ab              | Copy cURL with the status code and response time                                                           |
 |                 |                                                                                                            |
