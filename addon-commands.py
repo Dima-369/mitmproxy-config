@@ -248,10 +248,16 @@ def create_url_parameters_hash(url):
     return ''
 
 
-def map_api_url_to_local_path(url):
+# noinspection PyShadowingNames
+def map_flow_to_local_path(flow):
+    url = flow.request.pretty_url
     without_parameters = get_url_without_parameters(url)
     after_base = without_parameters.replace(map_local_base_url, '')
-    return os.path.join(map_local_dir, after_base) + create_url_parameters_hash(url) + ".json"
+    base_name = os.path.basename(after_base)
+    return os.path.join(
+        map_local_dir,
+        os.path.dirname(after_base),
+        flow.request.method + ' ' + base_name) + create_url_parameters_hash(url) + ".json"
 
 
 class MapLocalRequests:
@@ -259,8 +265,7 @@ class MapLocalRequests:
 
     @staticmethod
     def request(flow: http.HTTPFlow) -> None:
-        url = flow.request.pretty_url
-        local_file = map_api_url_to_local_path(url)
+        local_file = map_flow_to_local_path(flow)
 
         if os.path.exists(local_file):
             with open(local_file) as f:
@@ -285,7 +290,7 @@ class CreateLocal:
                 if map_local_base_url in url:
                     content = flow.response.content
 
-                    local_file = map_api_url_to_local_path(url)
+                    local_file = map_flow_to_local_path(flow)
                     local_dir = os.path.dirname(local_file)
 
                     if not os.path.exists(local_dir):
@@ -351,7 +356,7 @@ class DeleteLocalRequest:
             url = flow.request.pretty_url
 
             if map_local_base_url in url:
-                local_file = map_api_url_to_local_path(url)
+                local_file = map_flow_to_local_path(flow)
 
                 try:
                     os.remove(local_file)

@@ -35,7 +35,7 @@ The Markdown formatting is used for quick pasting into GitLab.
 
 * Local Directory Mapping
 
-Use the =local= command to create a JSON file. For instance, if the =local= command is used on =GET settings/wos=, it creates the file ={map_local_dir}/settings/wos.json=.
+Use the =local= command to create a JSON file. For instance, if the =local= command is used on =GET settings/wos=, it creates the file ={map_local_dir}/settings/GET wos.json=.
 
 The =response= value can be changed, just like the =headers= and =statusCode= JSON values. On subsequent API calls, the mapped local file is used instead of the API response, so you do not need to wait for the API response.
 
