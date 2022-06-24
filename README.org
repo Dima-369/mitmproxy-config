@@ -39,7 +39,7 @@ Use the =local= command to create a JSON file. For instance, if the =local= comm
 
 The =response= value can be changed, just like the =headers= and =statusCode= JSON values. On subsequent API calls, the mapped local file is used instead of the API response, so you do not need to wait for the API response.
 
-The =url= JSON value should not be changed. It is just for debugging.
+The =url= and =requestBody= JSON values should not be changed. They are just logged for context.
 
 #+begin_src json
 {

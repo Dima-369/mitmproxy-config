@@ -300,11 +300,16 @@ class CreateLocal:
                     for k, v in flow.response.headers.items():
                         response_headers[k] = v
 
+                    request_content = None
+                    if flow.request.content != b'':
+                        request_content = json.loads(flow.request.content)
+
                     data = {
                         'response': json.loads(content),
-                        'url': flow.request.method + ' ' + flow.request.pretty_url,
                         'headers': response_headers,
                         'statusCode': flow.response.status_code,
+                        'url': flow.request.method + ' ' + flow.request.pretty_url,
+                        'requestBody': request_content
                     }
                     with open(local_file, 'w+') as f:
                         f.write(json.dumps(data, indent=2))
