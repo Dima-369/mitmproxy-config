@@ -1,6 +1,8 @@
 * Warning
 
-This config is tested on my macOS system. It might need some adjustments for other operating systems.
+This config is tested on macOS. It might need some adjustments for other operating systems.
+
+On Windows, I have seen that =Windows Powershell= has issues with =mitmproxy=, so please use =Windows Terminal=.
 
 * Command overview
 
@@ -77,7 +79,17 @@ You may optionally also use =config.yaml= or =keys.yaml= if you have the need fo
 
 Note that you have to manually adjust =map_local_base_url= and =map_local_dir= to your preferences, so the Map Local functionality works.
 
-** Load addon-commands.py
+** Use a mitmproxy preconfigured .bat file for Windows
+
+You can save a =.bat= file with the following content to quickly start =mitmproxy= on the port of your choice. It is very likely that you need to start the =.bat= file as Administrator then, so the addon file can be correctly loaded in.
+
+Take care to modify the paths below:
+
+#+begin_src bat
+start "" "C:\Program Files (x86)\mitmproxy\bin\mitmproxy.exe" -p 9090 -s "C:\addon-commands.py"
+#+end_src
+
+** Load addon-commands.py on macOS/Linux
 
 Use =mitmproxy= on port 9090 and load =addon-commands.py= like this:
 
