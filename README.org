@@ -26,7 +26,16 @@ Those 3 JSON keys are mandatory and you need to set them up for your system. Her
 }
 #+end_src
 
-Feel free to set =startCommandOnLocalMap= to an empty array. The =###= string is replaced with the file path of the mapped file.
+The =###= string in =startCommandOnLocalMap= is replaced with the file path of the mapped file.
+
+Feel free to set =startCommandOnLocalMap= to an empty array if you do not want to use this functionality.
+Or use any program you like like =vim= or =emacsclient=.
+
+You can also use this to open =PhpStorm=:
+
+#+begin_src json
+"startCommandOnLocalMap": ["C:/Program Files/JetBrains/PhpStorm 2022.1.2/bin/phpstorm64.exe", "###"]
+#+end_src
 
 ** Use a mitmproxy preconfigured .bat file for Windows
 
