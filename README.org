@@ -22,7 +22,8 @@ On Windows, I have seen that =Windows Powershell= has issues with =mitmproxy=, s
 | cu              | Copy cURL with =```bash= ticks for Markdown formatting                                                       |
 | u               | Copy full URL                                                                                              |
 | url             | Copy URL behind =index.php/= with the method like: =GET v1/hours/all=                                          |
-| a               | Copy cURL with the status code, response time and response body                                            |
+| copyall         | Copy cURL with the status code, response time and response body                                            |
+| a               | Alias for =copyall @focus=                                                                                   |
 | ab              | Copy cURL with the status code and response time                                                           |
 |                 |                                                                                                            |
 | intercept.inner | Create an intercept filter for the current flow                                                            |
