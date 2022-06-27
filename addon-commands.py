@@ -328,7 +328,7 @@ class CreateLocal:
                         f.write(json.dumps(data, indent=2))
 
                     if single_flow and len(start_command_on_local_map) >= 1:
-                        cmd = map(lambda x: local_file if x == '###' else x, start_command_on_local_map)
+                        cmd = map(lambda x: x.replace('###', local_file), start_command_on_local_map)
                         subprocess.Popen(cmd,
                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
                 else:
