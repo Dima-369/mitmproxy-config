@@ -1,6 +1,7 @@
 import hashlib
 import json
 import os
+import pathlib
 import re
 import shlex
 import shutil
@@ -14,17 +15,12 @@ from mitmproxy import ctx
 from mitmproxy import flow
 from mitmproxy import http
 
-# map_local_base_url = "http://api.baubuddy.de/int/index.php/"
-map_local_base_url = "http://dev.baubuddy.de/api/index.php/"
-map_local_dir = "/Users/Gira/vero/mitmproxy-local/"
+with open(os.path.join(pathlib.Path(__file__).parent.absolute(), "config.json")) as f:
+    json_config = json.load(f)
 
-# examples are:
-#
-# use a ### string as a placeholder for the file
-#
-# start_command_on_local_map = ['notepad', '###']
-# start_command_on_local_map = ['emacsclient', '###']
-start_command_on_local_map = []
+map_local_base_url = json_config['mapLocalBaseUrl']
+map_local_dir = json_config['mapLocalDir']
+start_command_on_local_map = json_config['startCommandOnLocalMap']
 
 
 def get_status_code():
@@ -331,18 +327,9 @@ class CreateLocal:
                     with open(local_file, 'w+') as f:
                         f.write(json.dumps(data, indent=2))
 
-                    if single_flow:
-                        # focus Emacs, open the file without prompting for auto reverts and reload
-                        # the buffer for potential new changes
-                        subprocess.Popen(['emacsclient', '-e',
-                                          """
-                                          (run-at-time nil nil (lambda ()
-                                            (x-focus-frame nil)
-                                            (let (query-about-changed-file)
-                                              (find-file "{0}")
-                                              (revert-buffer-quick)
-                                              (goto-char (point-min)))))
-                                          """.replace('{0}', local_file)],
+                    if single_flow and len(start_command_on_local_map) >= 1:
+                        cmd = map(lambda x: local_file if x == '###' else x, start_command_on_local_map)
+                        subprocess.Popen(cmd,
                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
                 else:
                     if single_flow:
