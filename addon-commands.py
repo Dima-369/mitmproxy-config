@@ -14,7 +14,8 @@ from mitmproxy import ctx
 from mitmproxy import flow
 from mitmproxy import http
 
-map_local_base_url = "http://api.baubuddy.de/int/index.php/"
+# map_local_base_url = "http://api.baubuddy.de/int/index.php/"
+map_local_base_url = "http://dev.baubuddy.de/api/index.php/"
 map_local_dir = "/Users/Gira/vero/mitmproxy-local/"
 
 # examples are:
@@ -32,20 +33,6 @@ def get_status_code():
     """
     ctx.master.commands.execute("cut.clip @focus response.status_code")
     return pyperclip.paste()
-
-
-def get_response_content_in_blocks():
-    ctx.master.commands.execute("cut.clip @focus response.content")
-    raw = pyperclip.paste()
-    # noinspection PyBroadException
-    try:
-        return "```json\n" + \
-               trim_response_content(json.dumps(json.loads(raw), indent=2)) + \
-               "\n```"
-    except Exception:
-        return "```\n" + \
-               trim_response_content(raw) + \
-               "```"
 
 
 def trim_response_content(s):
@@ -133,17 +120,39 @@ class ShortUrlAddon:
 
 
 class AllResponseBodyAddon:
+    @command.command("copyall")
+    def do(self, flows: Sequence[flow.Flow]) -> None:
+        if len(flows) != 1:
+            ctx.log.alert("This can only operate on a single flow!")
+        else:
+            flow = flows[0]
+            curl = get_curl_formatted()
+            code = get_status_code()
+            time = get_time_from_timestamps()
+            response = flow.response.content
+            as_json = ''
+
+            # noinspection PyBroadException
+            try:
+                as_json = "```json\n" + \
+                          trim_response_content(json.dumps(json.loads(response), indent=2)) + \
+                          "\n```"
+            except Exception:
+                as_json = "```\n" + \
+                          trim_response_content(response) + \
+                          "```"
+
+            pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
+                           "{:.2f}".format(time) + "s with " + "status code " +
+                           code + " to return:\n\n" + as_json)
+            ctx.log.alert(
+                "Copied cURL, response body and status code to clipboard")
+
+
+class AllResponseBodyKey:
     @command.command("a")
     def do(self) -> None:
-        curl = get_curl_formatted()
-        code = get_status_code()
-        time = get_time_from_timestamps()
-        response = get_response_content_in_blocks()
-        pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
-                       "{:.2f}".format(time) + "s with " + "status code " +
-                       code + " to return:\n\n" + response)
-        ctx.log.alert(
-            "Copied cURL, response body and status code to clipboard")
+        ctx.master.commands.execute("copyall @focus")
 
 
 class AllResponseWithoutBodyAddon:
@@ -322,9 +331,18 @@ class CreateLocal:
                     with open(local_file, 'w+') as f:
                         f.write(json.dumps(data, indent=2))
 
-                    if single_flow and len(start_command_on_local_map) >= 1:
-                        cmd = map(lambda x: local_file if x == '###' else x, start_command_on_local_map)
-                        subprocess.Popen(cmd,
+                    if single_flow:
+                        # focus Emacs, open the file without prompting for auto reverts and reload
+                        # the buffer for potential new changes
+                        subprocess.Popen(['emacsclient', '-e',
+                                          """
+                                          (run-at-time nil nil (lambda ()
+                                            (x-focus-frame nil)
+                                            (let (query-about-changed-file)
+                                              (find-file "{0}")
+                                              (revert-buffer-quick)
+                                              (goto-char (point-min)))))
+                                          """.replace('{0}', local_file)],
                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
                 else:
                     if single_flow:
@@ -407,5 +425,6 @@ addons = [
     CreateLocalKey(),
     CreateAllLocalKey(),
     ResponseBodyKey(),
-    RequestBodyKey()
+    RequestBodyKey(),
+    AllResponseBodyKey()
 ]
