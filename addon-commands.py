@@ -126,23 +126,28 @@ class AllResponseBodyAddon:
             code = get_status_code()
             time = get_time_from_timestamps()
             response = flow.response.content
-            as_json = ''
 
-            # noinspection PyBroadException
-            try:
-                as_json = "```json\n" + \
-                          trim_response_content(json.dumps(json.loads(response), indent=2)) + \
-                          "\n```"
-            except Exception:
-                as_json = "```\n" + \
-                          trim_response_content(response) + \
-                          "```"
-
-            pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
-                           "{:.2f}".format(time) + "s with " + "status code " +
-                           code + " to return:\n\n" + as_json)
-            ctx.log.alert(
-                "Copied cURL, response body and status code to clipboard")
+            if len(response) == 0:
+                pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
+                               "{:.2f}".format(time) + "s with " + "status code " +
+                               code + " with no response body.")
+                ctx.log.alert(
+                    "Copied cURL and status code to clipboard. There was no response body!")
+            else:
+                # noinspection PyBroadException
+                try:
+                    as_json = "```json\n" + \
+                              trim_response_content(json.dumps(json.loads(response), indent=2)) + \
+                              "\n```"
+                except Exception:
+                    as_json = "```\n" + \
+                              trim_response_content(response) + \
+                              "```"
+                pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
+                               "{:.2f}".format(time) + "s with " + "status code " +
+                               code + " to return:\n\n" + as_json)
+                ctx.log.alert(
+                    "Copied cURL, response body and status code to clipboard")
 
 
 class AllResponseBodyKey:

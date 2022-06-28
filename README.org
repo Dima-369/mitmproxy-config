@@ -16,7 +16,7 @@ You may optionally also use =config.yaml= or =keys.yaml= if you have the need fo
 
 ** Install required Python 3 libraries
 
-It is possible that you do not need to install the =mitmproxy= library here as well.
+It is possible that you do not need to install the =mitmproxy= library:
 
 #+begin_src bash
 pip install pyperclip pathlib mitmproxy
