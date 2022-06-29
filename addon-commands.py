@@ -320,7 +320,10 @@ class CreateLocal:
 
                     request_content = None
                     if flow.request.content != b'':
-                        request_content = json.loads(flow.request.content)
+                        try:
+                            request_content = json.loads(flow.request.content)
+                        except json.JSONDecodeError:
+                            request_content = flow.request.content
 
                     data = {
                         'response': json.loads(content),
