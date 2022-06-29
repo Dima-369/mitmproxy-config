@@ -322,7 +322,7 @@ class CreateLocal:
                     if flow.request.content != b'':
                         try:
                             request_content = json.loads(flow.request.content)
-                        except json.JSONDecodeError:
+                        except (json.JSONDecodeError, UnicodeDecodeError):
                             request_content = flow.request.content
 
                     data = {
