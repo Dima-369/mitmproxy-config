@@ -12,10 +12,11 @@ from urllib.parse import unquote, urljoin, urlparse
 import pyperclip
 from mitmproxy import command
 from mitmproxy import ctx
-from mitmproxy import flow
 from mitmproxy import http
+from mitmproxy.flow import Flow
 
-with open(os.path.join(pathlib.Path(__file__).parent.absolute(), "config.json")) as f:
+with open(os.path.join(
+        pathlib.Path(__file__).parent.absolute(), "config.json")) as f:
     json_config = json.load(f)
 
 map_local_base_url = json_config['mapLocalBaseUrl']
@@ -117,7 +118,7 @@ class ShortUrlAddon:
 
 class AllResponseBodyAddon:
     @command.command("copyall")
-    def do(self, flows: Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[Flow]) -> None:
         if len(flows) != 1:
             ctx.log.alert("This can only operate on a single flow!")
         else:
@@ -129,23 +130,25 @@ class AllResponseBodyAddon:
 
             if len(response) == 0:
                 pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
-                               "{:.2f}".format(time) + "s with " + "status code " +
-                               code + " with no response body.")
-                ctx.log.alert(
-                    "Copied cURL and status code to clipboard. There was no response body!")
+                               "{:.2f}".format(time) + "s with " +
+                               "status code " + code +
+                               " with no response body.")
+                ctx.log.alert("Copied cURL and status code to clipboard. " +
+                              "There was no response body!")
             else:
                 # noinspection PyBroadException
                 try:
-                    as_json = "```json\n" + \
-                              trim_response_content(json.dumps(json.loads(response), indent=2)) + \
+                    as_json = "```json\n" + trim_response_content(
+                        json.dumps(json.loads(response), indent=2)) + \
                               "\n```"
                 except Exception:
                     as_json = "```\n" + \
                               trim_response_content(response) + \
                               "```"
                 pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
-                               "{:.2f}".format(time) + "s with " + "status code " +
-                               code + " to return:\n\n" + as_json)
+                               "{:.2f}".format(time) + "s with " +
+                               "status code " + code + " to return:\n\n" +
+                               as_json)
                 ctx.log.alert(
                     "Copied cURL, response body and status code to clipboard")
 
@@ -165,8 +168,7 @@ class AllResponseWithoutBodyAddon:
         pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
                        "{:.2f}".format(time) + "s with " + "status code " +
                        code + ".")
-        ctx.log.alert(
-            "Copied cURL  and status code to clipboard")
+        ctx.log.alert("Copied cURL  and status code to clipboard")
 
 
 # if is_request is false, it is assumed that this is a request
@@ -192,7 +194,7 @@ def copy_content_as_json(content, is_request):
 
 class RequestBodyAddon:
     @command.command("copyrequest")
-    def do(self, flows: Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[Flow]) -> None:
         if len(flows) != 1:
             ctx.log.alert("This can only operate on a single flow!")
         else:
@@ -209,7 +211,7 @@ class RequestBodyKey:
 
 class ResponseBodyAddon:
     @command.command("copyresponse")
-    def do(self, flows: Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[Flow]) -> None:
         if len(flows) != 1:
             ctx.log.alert("This can only operate on a single flow!")
         else:
@@ -238,12 +240,14 @@ class FlowResumeAddon:
 
 class InterceptAddon:
     @command.command("intercept.inner")
-    def do(self, flows: Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[Flow]) -> None:
         for f in flows:
             url = re.escape(f.request.url)
             ctx.master.commands.execute(
                 f"console.command set intercept '~u {url} & ~s'")
 
+
+class InterceptKey:
     @command.command("cept")
     def do(self) -> None:
         ctx.master.commands.execute("intercept.inner @focus")
@@ -272,15 +276,13 @@ def map_flow_to_local_path(flow):
     without_parameters = get_url_without_parameters(url)
     after_base = without_parameters.replace(map_local_base_url, '')
     base_name = os.path.basename(after_base)
-    return os.path.join(
-        map_local_dir,
-        os.path.dirname(after_base),
-        flow.request.method + ' ' + base_name) + create_url_parameters_hash(url) + ".json"
+    return os.path.join(map_local_dir, os.path.dirname(after_base),
+                        flow.request.method + ' ' +
+                        base_name) + create_url_parameters_hash(url) + ".json"
 
 
 class MapLocalRequests:
     """ Map to local response bodies from a directory. """
-
     @staticmethod
     def request(flow: http.HTTPFlow) -> None:
         local_file = map_flow_to_local_path(flow)
@@ -288,16 +290,14 @@ class MapLocalRequests:
         if os.path.exists(local_file):
             with open(local_file) as f:
                 data = json.loads(f.read())
-                # flow.response = http.Response.make(data['statusCode'], data['response'], data['headers'])
                 flow.response = http.Response.make(
-                    data['statusCode'],
-                    json.dumps(data['response'], indent=2),
+                    data['statusCode'], json.dumps(data['response'], indent=2),
                     data['headers'])
 
 
 class CreateLocal:
     @command.command("local")
-    def do(self, flows: Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[Flow]) -> None:
         has_error = False
         single_flow = len(flows) == 1
         no_response_count = 0
@@ -325,33 +325,41 @@ class CreateLocal:
                         except (json.JSONDecodeError, UnicodeDecodeError):
                             request_content = flow.request.content
 
+                    req = flow.request
                     data = {
                         'response': json.loads(content),
                         'headers': response_headers,
                         'statusCode': flow.response.status_code,
-                        'url': flow.request.method + ' ' + flow.request.pretty_url,
-                        'requestBody': request_content
+                        'url': req.method + ' ' + req.pretty_url,
+                        'requestBody': request_content,
                     }
                     with open(local_file, 'w+') as f:
                         f.write(json.dumps(data, indent=2))
 
                     if single_flow and len(start_command_on_local_map) >= 1:
-                        cmd = map(lambda x: x.replace('###', local_file), start_command_on_local_map)
+                        cmd = map(lambda x: x.replace('###', local_file),
+                                  start_command_on_local_map)
                         subprocess.Popen(cmd,
-                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+                                         stdout=subprocess.PIPE,
+                                         stderr=subprocess.PIPE,
+                                         stdin=subprocess.PIPE)
                 else:
                     if single_flow:
                         has_error = True
-                        ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
+                        ctx.log.alert('Configured base URL is not present: ' +
+                                      map_local_base_url)
             else:
                 no_response_count += 1
 
         if not has_error:
             if no_response_count == 0:
-                ctx.log.alert('Saved ' + str(len(flows)) + ' flow(s) to ' + map_local_dir)
+                ctx.log.alert('Saved ' + str(len(flows)) + ' flow(s) to ' +
+                              map_local_dir)
             else:
-                ctx.log.alert('Saved ' + str(len(flows) - no_response_count) + ' flow(s) to ' + map_local_dir +
-                              ' --- ' + str(no_response_count) + ' flow(s) without response')
+                ctx.log.alert('Saved ' + str(len(flows) - no_response_count) +
+                              ' flow(s) to ' + map_local_dir + ' --- ' +
+                              str(no_response_count) +
+                              ' flow(s) without response')
 
 
 class CreateAllLocalKey:
@@ -368,7 +376,7 @@ class CreateLocalKey:
 
 class DeleteLocalRequest:
     @command.command("localdelete")
-    def do(self, flows: Sequence[flow.Flow]) -> None:
+    def do(self, flows: Sequence[Flow]) -> None:
         for flow in flows:
             url = flow.request.pretty_url
 
@@ -381,7 +389,8 @@ class DeleteLocalRequest:
                 except FileNotFoundError:
                     ctx.log.alert('Local mapping files do not exist!')
             else:
-                ctx.log.alert('Configured base URL is not present: ' + map_local_base_url)
+                ctx.log.alert('Configured base URL is not present: ' +
+                              map_local_base_url)
 
 
 class DeleteLocalRequestKey:
@@ -404,7 +413,7 @@ addons = [
     DeleteLocalRequest(),
     DeleteLocalRequest(),
     ClearMappedLocalRequests(),
-
+    # other functionality
     CurlAddon(),
     UrlAddon(),
     ShortUrlAddon(),
@@ -415,11 +424,12 @@ addons = [
     FlowResumeAddon(),
     AllResponseBodyAddon(),
     AllResponseWithoutBodyAddon(),
-
+    # keys
     DeleteLocalRequestKey(),
     CreateLocalKey(),
     CreateAllLocalKey(),
     ResponseBodyKey(),
     RequestBodyKey(),
-    AllResponseBodyKey()
+    AllResponseBodyKey(),
+    InterceptKey(),
 ]
