@@ -76,6 +76,7 @@ def get_curl_formatted():
 
 
 class CurlAddon:
+
     @command.command("cu")
     def do(self) -> None:
         pyperclip.copy("```bash\n" + get_curl_formatted() + "\n```")
@@ -83,6 +84,7 @@ class CurlAddon:
 
 
 class UrlAddon:
+
     @command.command("u")
     def do(self) -> None:
         ctx.master.commands.execute("cut.clip @focus request.url")
@@ -92,6 +94,7 @@ class UrlAddon:
 
 
 class ShortUrlAddon:
+
     @command.command("url")
     def do(self) -> None:
         """Copy the method plus the URL with the base and the params cut off.
@@ -117,6 +120,7 @@ class ShortUrlAddon:
 
 
 class AllResponseBodyAddon:
+
     @command.command("copyall")
     def do(self, flows: Sequence[Flow]) -> None:
         if len(flows) != 1:
@@ -154,12 +158,14 @@ class AllResponseBodyAddon:
 
 
 class AllResponseBodyKey:
+
     @command.command("a")
     def do(self) -> None:
         ctx.master.commands.execute("copyall @focus")
 
 
 class AllResponseWithoutBodyAddon:
+
     @command.command("ab")
     def do(self) -> None:
         curl = get_curl_formatted()
@@ -193,6 +199,7 @@ def copy_content_as_json(content, is_request):
 
 
 class RequestBodyAddon:
+
     @command.command("copyrequest")
     def do(self, flows: Sequence[Flow]) -> None:
         if len(flows) != 1:
@@ -204,12 +211,14 @@ class RequestBodyAddon:
 
 
 class RequestBodyKey:
+
     @command.command("req")
     def do(self) -> None:
         ctx.master.commands.execute("copyrequest @focus")
 
 
 class ResponseBodyAddon:
+
     @command.command("copyresponse")
     def do(self, flows: Sequence[Flow]) -> None:
         if len(flows) != 1:
@@ -221,24 +230,28 @@ class ResponseBodyAddon:
 
 
 class ResponseBodyKey:
+
     @command.command("resp")
     def do(self) -> None:
         ctx.master.commands.execute("copyresponse @focus")
 
 
 class KeyBindingAddon:
+
     @command.command("k")
     def do(self) -> None:
         ctx.master.commands.execute("console.view.keybindings")
 
 
 class FlowResumeAddon:
+
     @command.command("r")
     def do(self) -> None:
         ctx.master.commands.execute("flow.resume @focus")
 
 
 class InterceptAddon:
+
     @command.command("intercept.inner")
     def do(self, flows: Sequence[Flow]) -> None:
         for f in flows:
@@ -248,6 +261,7 @@ class InterceptAddon:
 
 
 class InterceptKey:
+
     @command.command("cept")
     def do(self) -> None:
         ctx.master.commands.execute("intercept.inner @focus")
@@ -283,6 +297,7 @@ def map_flow_to_local_path(flow):
 
 class MapLocalRequests:
     """ Map to local response bodies from a directory. """
+
     @staticmethod
     def request(flow: http.HTTPFlow) -> None:
         local_file = map_flow_to_local_path(flow)
@@ -296,6 +311,7 @@ class MapLocalRequests:
 
 
 class CreateLocal:
+
     @command.command("local")
     def do(self, flows: Sequence[Flow]) -> None:
         has_error = False
@@ -306,8 +322,6 @@ class CreateLocal:
             if flow.response:
                 url = flow.request.pretty_url
                 if map_local_base_url in url:
-                    content = flow.response.content
-
                     local_file = map_flow_to_local_path(flow)
                     local_dir = os.path.dirname(local_file)
 
@@ -323,11 +337,20 @@ class CreateLocal:
                         try:
                             request_content = json.loads(flow.request.content)
                         except (json.JSONDecodeError, UnicodeDecodeError):
-                            request_content = flow.request.content
+                            request_content = flow.request.content.decode(
+                                'utf-8')
+
+                    response_content = None
+                    if flow.response.content != b'':
+                        try:
+                            response_content = json.loads(flow.response.content)
+                        except (json.JSONDecodeError, UnicodeDecodeError):
+                            response_content = flow.response.content.decode(
+                                'utf-8')
 
                     req = flow.request
                     data = {
-                        'response': json.loads(content),
+                        'response': response_content,
                         'headers': response_headers,
                         'statusCode': flow.response.status_code,
                         'url': req.method + ' ' + req.pretty_url,
@@ -363,18 +386,21 @@ class CreateLocal:
 
 
 class CreateAllLocalKey:
+
     @command.command("la")
     def do(self) -> None:
         ctx.master.commands.execute("local @all")
 
 
 class CreateLocalKey:
+
     @command.command("l")
     def do(self) -> None:
         ctx.master.commands.execute("local @focus")
 
 
 class DeleteLocalRequest:
+
     @command.command("localdelete")
     def do(self, flows: Sequence[Flow]) -> None:
         for flow in flows:
@@ -394,12 +420,14 @@ class DeleteLocalRequest:
 
 
 class DeleteLocalRequestKey:
+
     @command.command("ld")
     def do(self) -> None:
         ctx.master.commands.execute("localdelete @focus")
 
 
 class ClearMappedLocalRequests:
+
     @command.command("lc")
     def do(self) -> None:
         shutil.rmtree(map_local_dir)
