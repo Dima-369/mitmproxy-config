@@ -340,17 +340,16 @@ class CreateLocal:
                             request_content = flow.request.content.decode(
                                 'utf-8')
 
-                    response_content = None
+                    resp = None
                     if flow.response.content != b'':
                         try:
-                            response_content = json.loads(flow.response.content)
+                            resp = json.loads(flow.response.content)
                         except (json.JSONDecodeError, UnicodeDecodeError):
-                            response_content = flow.response.content.decode(
-                                'utf-8')
+                            resp = flow.response.content.decode('utf-8')
 
                     req = flow.request
                     data = {
-                        'response': response_content,
+                        'response': resp,
                         'headers': response_headers,
                         'statusCode': flow.response.status_code,
                         'url': req.method + ' ' + req.pretty_url,
