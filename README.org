@@ -1,9 +1,3 @@
-* Warning
-
-This config is tested on macOS. It might need some adjustments for other operating systems.
-
-On Windows, I have seen that =Windows Powershell= has issues with =mitmproxy=, so please use =Windows Terminal=.
-
 * Setup
 
 Clone this repository to =~/.mitmproxy= (or copy only =addon-commands.py=) like this (for macOS and Linux):
@@ -44,6 +38,10 @@ You can also use this to open =PhpStorm=:
 #+begin_src json
 "startCommandOnLocalMap": ["C:/Program Files/JetBrains/PhpStorm 2022.1.2/bin/phpstorm64.exe", "###"]
 #+end_src
+
+** Use Windows Terminal/Powershell to launch mitmproxy
+
+On Windows it could be that =Windows Powershell= has problems displaying =mitmproxy=, so use =Windows Terminal= instead.
 
 ** Use a mitmproxy preconfigured .bat file for Windows
 
