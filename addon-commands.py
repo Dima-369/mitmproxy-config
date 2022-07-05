@@ -310,6 +310,19 @@ class MapLocalRequests:
                     data['headers'])
 
 
+def format_any_content(content):
+    if content == 'b':
+        return None
+    try:
+        return json.loads(content)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        try:
+            return content.decode('utf-8')
+        except UnicodeDecodeError:
+            # note that this is the case for POST files
+            return "unmappable content for JSON"
+
+
 class CreateLocal:
 
     @command.command("local")
@@ -317,6 +330,7 @@ class CreateLocal:
         has_error = False
         single_flow = len(flows) == 1
         no_response_count = 0
+        unmappable_response_count = 0
 
         for flow in flows:
             if flow.response:
@@ -332,20 +346,14 @@ class CreateLocal:
                     for k, v in flow.response.headers.items():
                         response_headers[k] = v
 
-                    request_content = None
-                    if flow.request.content != b'':
-                        try:
-                            request_content = json.loads(flow.request.content)
-                        except (json.JSONDecodeError, UnicodeDecodeError):
-                            request_content = flow.request.content.decode(
-                                'utf-8')
+                    request_content = format_any_content(flow.request.content)
+                    resp = format_any_content(flow.response.content)
 
-                    resp = None
-                    if flow.response.content != b'':
-                        try:
-                            resp = json.loads(flow.response.content)
-                        except (json.JSONDecodeError, UnicodeDecodeError):
-                            resp = flow.response.content.decode('utf-8')
+                    if request_content == "unmappable content for JSON" or \
+                       resp == "unmappable content for JSON":
+                        unmappable_response_count += 1
+                        ctx.log.alert("failoo")
+                        continue
 
                     req = flow.request
                     data = {
@@ -374,14 +382,18 @@ class CreateLocal:
                 no_response_count += 1
 
         if not has_error:
-            if no_response_count == 0:
+            if no_response_count == 0 and unmappable_response_count == 0:
                 ctx.log.alert('Saved ' + str(len(flows)) + ' flow(s) to ' +
                               map_local_dir)
             else:
-                ctx.log.alert('Saved ' + str(len(flows) - no_response_count) +
-                              ' flow(s) to ' + map_local_dir + ' --- ' +
+                ctx.log.alert('Saved ' + str(
+                    len(flows) - no_response_count -
+                    unmappable_response_count) + ' flow(s) to ' +
+                              map_local_dir + ' --- ' +
                               str(no_response_count) +
-                              ' flow(s) without response')
+                              ' flow(s) without response --- ' +
+                              str(unmappable_response_count) +
+                              ' flow(s) unmappable to JSON')
 
 
 class CreateAllLocalKey:
