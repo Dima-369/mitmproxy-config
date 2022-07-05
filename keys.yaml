@@ -14,6 +14,9 @@
 - key: "h" # mapping to "n" is broken apparently
   ctx: ["flowview"]
   cmd: console.nav.next
+- key: "space"
+  ctx: ["flowview"]
+  cmd: console.nav.pagedown
 - key: "a"
   ctx: ["flowview", "flowlist", "help", "keybindings"]
   cmd: console.command
