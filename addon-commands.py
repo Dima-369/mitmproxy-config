@@ -19,9 +19,23 @@ with open(os.path.join(
         pathlib.Path(__file__).parent.absolute(), "config.json")) as f:
     json_config = json.load(f)
 
-map_local_base_url = json_config['mapLocalBaseUrl']
+map_local_base_urls = json_config['mapLocalBaseUrls']
 map_local_dir = json_config['mapLocalDir']
 start_command_on_local_map = json_config['startCommandOnLocalMap']
+
+
+def is_url_in_map_local_base_urls(url):
+    for base_url in map_local_base_urls:
+        if base_url in url:
+            return True
+    return False
+
+
+def get_after_base_url_from_local_base(without_parameters_url):
+    for base_url in map_local_base_urls:
+        if base_url in without_parameters_url:
+            return without_parameters_url.replace(base_url, '')
+    return without_parameters_url
 
 
 def get_status_code():
@@ -288,7 +302,7 @@ def create_url_parameters_hash(url):
 def map_flow_to_local_path(flow):
     url = flow.request.pretty_url
     without_parameters = get_url_without_parameters(url)
-    after_base = without_parameters.replace(map_local_base_url, '')
+    after_base = get_after_base_url_from_local_base(without_parameters)
     base_name = os.path.basename(after_base)
     return os.path.join(map_local_dir, os.path.dirname(after_base),
                         flow.request.method + ' ' +
@@ -335,7 +349,7 @@ class CreateLocal:
         for flow in flows:
             if flow.response:
                 url = flow.request.pretty_url
-                if map_local_base_url in url:
+                if is_url_in_map_local_base_urls(url):
                     local_file = map_flow_to_local_path(flow)
                     local_dir = os.path.dirname(local_file)
 
@@ -376,8 +390,9 @@ class CreateLocal:
                 else:
                     if single_flow:
                         has_error = True
-                        ctx.log.alert('Configured base URL is not present: ' +
-                                      map_local_base_url)
+                        ctx.log.alert(
+                            'Configured base URLs are not present: ' +
+                            str(map_local_base_urls))
             else:
                 no_response_count += 1
 
@@ -417,7 +432,7 @@ class DeleteLocalRequest:
         for flow in flows:
             url = flow.request.pretty_url
 
-            if map_local_base_url in url:
+            if is_url_in_map_local_base_urls(url):
                 local_file = map_flow_to_local_path(flow)
 
                 try:
@@ -426,8 +441,8 @@ class DeleteLocalRequest:
                 except FileNotFoundError:
                     ctx.log.alert('Local mapping files do not exist!')
             else:
-                ctx.log.alert('Configured base URL is not present: ' +
-                              map_local_base_url)
+                ctx.log.alert('Configured base URLs are not present: ' +
+                              str(map_local_base_urls))
 
 
 class DeleteLocalRequestKey:

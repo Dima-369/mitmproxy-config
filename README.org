@@ -22,11 +22,15 @@ Those 3 JSON keys are mandatory and you need to set them up for your system. Her
 
 #+begin_src json
 {
-  "mapLocalBaseUrl": "http://api.baubuddy.de/int/index.php/",
+  "mapLocalBaseUrls": ["http://api.baubuddy.de/int/index.php/"],
   "mapLocalDir": "/Users/Gira/vero/mitmproxy-local/",
   "startCommandOnLocalMap": ["notepad", "###"]
 }
 #+end_src
+
+Note that =mapLocalBaseUrls= is an array and can contain multiple base URLs. But take care that the file system does not reflect this, so the mapped file is overwritten regardless of the base URL.
+
+---
 
 The =###= string in =startCommandOnLocalMap= is replaced with the file path of the mapped file.
 
