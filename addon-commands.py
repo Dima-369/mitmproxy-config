@@ -107,6 +107,34 @@ class UrlAddon:
         ctx.log.alert("Copied to clipboard: " + url)
 
 
+class ShortUrlMarkdownAddon:
+
+    @command.command("ur")
+    def do(self) -> None:
+        """Copy the method plus the URL with the base and the params cut off
+        with surrounding Markdown code blocks.
+      
+        Example: `GET printouts/printhours.pdf`
+        """
+        ctx.master.commands.execute("cut.clip @focus request.url")
+        raw_url = unquote(pyperclip.paste())
+
+        last = "/index.php/"
+        if last in raw_url:
+            url = raw_url[raw_url.index(last) + len(last):]
+            if "?" in url:
+                url = url[:url.index("?")]
+        else:
+            url = raw_url
+
+        ctx.master.commands.execute("cut.clip @focus request.method")
+        method = pyperclip.paste()
+        full = "`" + method + " " + url + "`"
+        pyperclip.copy(full)
+
+        ctx.log.alert("Copied to clipboard: " + full)
+
+
 class ShortUrlAddon:
 
     @command.command("url")
@@ -364,7 +392,7 @@ class CreateLocal:
                     resp = format_any_content(flow.response.content)
 
                     if request_content == "unmappable content for JSON" or \
-                       resp == "unmappable content for JSON":
+                            resp == "unmappable content for JSON":
                         unmappable_response_count += 1
                         ctx.log.alert("failoo")
                         continue
@@ -471,6 +499,7 @@ addons = [
     CurlAddon(),
     UrlAddon(),
     ShortUrlAddon(),
+    ShortUrlMarkdownAddon(),
     RequestBodyAddon(),
     ResponseBodyAddon(),
     KeyBindingAddon(),
