@@ -115,6 +115,9 @@ end
 | cept            | Alias for =intercept.inner @focus=                                                                           |
 | r               | Resume intercepted flow                                                                                    |
 |                 |                                                                                                            |
+| f               | Insert =set view_filter= into console                                                                        |
+| fc              | Clear =view_filter=                                                                                          |
+|                 |                                                                                                            |
 | k               | View keybindings                                                                                           |
 
 Those commands are invoked first by hitting =:= and then entering any command.
