@@ -502,7 +502,7 @@ class SetupViewFilterKey:
     @command.command("f")
     def do(self) -> None:
         ctx.master.commands.execute("console.command set view_filter")
-        
+
 
 addons = [
     MapLocalRequests(),
