@@ -47,6 +47,11 @@ def get_status_code():
 
 
 def trim_response_content(s):
+    """
+    :return: a string
+    """
+    if isinstance(s, bytes):
+        s = s.decode('utf-8')
     if len(s) >= 2100:
         s = s[:2100] + "..."
     return s
