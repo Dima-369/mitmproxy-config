@@ -105,8 +105,8 @@ end
 | resp            | Alias for =copyresponse @focus=                                                                              |
 | cu              | Copy cURL with =```bash= ticks for Markdown formatting                                                       |
 | u               | Copy full URL                                                                                              |
-| ur              | Copy URL behind =index.php/= with the method like: =`GET v1/hours/all`= in Markdown code blocks                |
-| url             | Copy URL behind =index.php/= with the method like: =GET v1/hours/all=                                          |
+| ur              | Copy URL behind =index.php/= with the method like: =`GET v1/hours/all?params=...`= in Markdown code blocks     |
+| url             | Copy URL behind =index.php/= with the method like, but without the API URL: =GET v1/hours/all=                 |
 | copyall         | Copy cURL with the status code, response time and response body                                            |
 | a               | Alias for =copyall @focus=                                                                                   |
 | ab              | Copy cURL with the status code and response time                                                           |

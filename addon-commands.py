@@ -127,8 +127,6 @@ class ShortUrlMarkdownAddon:
         last = "/index.php/"
         if last in raw_url:
             url = raw_url[raw_url.index(last) + len(last):]
-            if "?" in url:
-                url = url[:url.index("?")]
         else:
             url = raw_url
 
