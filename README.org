@@ -23,8 +23,27 @@ Those 3 JSON keys are mandatory and you need to set them up for your system. Her
 #+begin_src json
 {
   "mapLocalBaseUrls": ["http://api.baubuddy.de/int/index.php/"],
-  "mapLocalDir": "/Users/Gira/vero/mitmproxy-local/",
+  "mapLocalDir": "/Users/dima/vero/mitmproxy-local/",
   "startCommandOnLocalMap": ["notepad", "###"]
+}
+#+end_src
+
+Or an example for Emacs:
+
+#+begin_src json
+{
+  "mapLocalBaseUrls": [
+    "http://api.baubuddy.de/int/index.php/",
+    "http://api.baubuddy.de/dev/index.php/",
+    "http://api.baubuddy.de/index.php/",
+    "http://intern.digithebutler.at:8080/api/index.php/"
+  ],
+  "mapLocalDir": "/Users/dima/vero/mitmproxy-local/",
+  "startCommandOnLocalMap": [
+    "emacsclient",
+    "-e",
+    "(run-at-time nil nil (lambda () (x-focus-frame nil) (let (query-about-changed-file) (find-file \"###\") (revert-buffer-quick) (goto-char (point-min)))))"
+  ]
 }
 #+end_src
 
