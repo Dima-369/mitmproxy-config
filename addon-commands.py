@@ -74,6 +74,12 @@ def get_curl_formatted():
     next_cmd = False
 
     for s in parts[1:]:
+        parsed_url = urlparse(s)
+        if parsed_url.scheme and parsed_url.netloc:
+            # unquote since the export.clip command returns a string like this:
+            # ?alias=projectStatus%3Astatus
+            s = unquote(s)
+
         if next_cmd:
             output += "'" + s + "' \\\n"
             next_cmd = False
