@@ -7,7 +7,7 @@ import shlex
 import shutil
 import subprocess
 from collections.abc import Sequence
-from urllib.parse import unquote, urljoin, urlparse
+from urllib.parse import unquote, urljoin, urlparse, parse_qs
 
 import pyperclip
 from mitmproxy import command
@@ -72,6 +72,7 @@ def get_curl_formatted():
     parts = shlex.split(s)
     output = parts[0] + " \\\n"
     next_cmd = False
+    markdown_table = ""
 
     for s in parts[1:]:
         parsed_url = urlparse(s)
@@ -93,21 +94,31 @@ def get_curl_formatted():
             # pass -g for the unescaped URL so the curl can be executed in the
             # terminal
             output += "   -g \\\n"
-            # in most cases this is the URL at the very end of the command
+
+            # pretty much always, this is the URL at the very end of the command
             output += "   '" + s + "' \\\n"
+
+            query_params = parse_qs(urlparse(s).query)
+            if len(query_params) >= 1:
+                param_list = [{"Parameter": key, "Value": value[0]} for key, value in query_params.items()]
+                markdown_table = "\n| Parameter | Value |\n| --- | --- |\n"
+                for param in param_list:
+                    markdown_table += f"| {param['Parameter']} | {param['Value']} |\n"
+
             next_cmd = False
 
     output = output.strip()
     if output.endswith("\\"):
         output = output[:-1]
-    return output
+
+    return "```bash\n" + output + "\n```\n" + markdown_table
 
 
 class CurlAddon:
 
     @command.command("cu")
     def do(self) -> None:
-        pyperclip.copy("```bash\n" + get_curl_formatted() + "\n```")
+        pyperclip.copy(get_curl_formatted())
         ctx.log.alert("Copied cURL with ```bash to clipboard")
 
 
@@ -187,7 +198,7 @@ class AllResponseBodyAddon:
             response = flow.response.content
 
             if len(response) == 0:
-                pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
+                pyperclip.copy(curl + "\nTook " +
                                "{:.2f}".format(time) + "s with " +
                                "status code " + code +
                                " with no response body.")
@@ -203,7 +214,7 @@ class AllResponseBodyAddon:
                     as_json = "```\n" + \
                               trim_response_content(response) + \
                               "```"
-                pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
+                pyperclip.copy(curl + "\n" + "Took " +
                                "{:.2f}".format(time) + "s with " +
                                "status code " + code + " to return:\n\n" +
                                as_json)
@@ -225,7 +236,7 @@ class AllResponseWithoutBodyAddon:
         curl = get_curl_formatted()
         code = get_status_code()
         time = get_time_from_timestamps()
-        pyperclip.copy("```bash\n" + curl + "\n```\n\n" + "Took " +
+        pyperclip.copy(curl + "\nTook " +
                        "{:.2f}".format(time) + "s with " + "status code " +
                        code + ".")
         ctx.log.alert("Copied cURL  and status code to clipboard")
