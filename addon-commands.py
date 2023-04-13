@@ -101,9 +101,9 @@ def get_curl_formatted():
             query_params = parse_qs(urlparse(s).query)
             if len(query_params) >= 1:
                 param_list = [{"Parameter": key, "Value": value[0]} for key, value in query_params.items()]
-                markdown_table = "\n| Parameter | Value |\n| --- | --- |\n"
+                markdown_table = "\n"
                 for param in param_list:
-                    markdown_table += f"| {param['Parameter']} | {param['Value']} |\n"
+                    markdown_table += f"`{param['Parameter']}`\n{param['Value']}\n\n"
 
             next_cmd = False
 
