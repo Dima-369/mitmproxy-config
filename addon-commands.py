@@ -90,6 +90,9 @@ def get_curl_formatted():
             output += "   " + s + " "
             next_cmd = True
         else:
+            # pass -g for the unescaped URL so the curl can be executed in the
+            # terminal
+            output += "   -g \\\n"
             # in most cases this is the URL at the very end of the command
             output += "   '" + s + "' \\\n"
             next_cmd = False
