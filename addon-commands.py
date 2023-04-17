@@ -100,8 +100,22 @@ def get_curl_formatted():
 
             query_params = parse_qs(urlparse(s).query)
             if len(query_params) >= 1:
+
+                last = "/index.php/"
+                if last in s:
+                    url = s[s.index(last) + len(last):]
+                else:
+                    url = s
+
+                if '?' in url:
+                    url = url[:url.index('?')]
+
+                ctx.master.commands.execute("cut.clip @focus request.method")
+                method = pyperclip.paste()
+                full = method + " " + url
+
                 param_list = [{"Parameter": key, "Value": value[0]} for key, value in query_params.items()]
-                markdown_table = "\n<details>\n<summary>Query parameters</summary>\n\n"
+                markdown_table = "\n<details>\n<summary>" + full + "</summary>\n\n"
                 for param in param_list:
                     markdown_table += f"`{param['Parameter']}`\n{param['Value']}\n\n"
                 markdown_table += '</details>'
