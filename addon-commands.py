@@ -481,7 +481,7 @@ class CreateAllLocalKey:
 
     @command.command("la")
     def do(self) -> None:
-        ctx.master.commands.execute("local @all")
+        ctx.master.commands.execute("local @shown")
 
 
 class CreateLocalKey:

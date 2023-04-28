@@ -109,35 +109,35 @@ end
 
 * Command overview
 
-| Command         | Description                                                                                                |
-|-----------------+------------------------------------------------------------------------------------------------------------|
-| local           | Map the flow to the file system. The mapped JSON file can be edited and will be used on consequent access. |
-| l               | Alias for =local @focus=                                                                                     |
-| la              | Alias for =local @all=                                                                                       |
-| localdelete     | Delete the mapped flow on the file system                                                                  |
-| ld              | Alias for =localdelete @focus=                                                                               |
-| lc              | Delete everything in the mapped file system directory                                                      |
-|                 |                                                                                                            |
-| copyrequest     | Copy the request body                                                                                      |
-| req             | Alias for =copyrequest @focus=                                                                               |
-| copyresponse    | Copy the response body                                                                                     |
-| resp            | Alias for =copyresponse @focus=                                                                              |
-| cu              | Copy cURL with =```bash= ticks for Markdown formatting                                                       |
-| u               | Copy full URL                                                                                              |
-| ur              | Copy URL behind =index.php/= with the method like: =`GET v1/hours/all?params=...`= in Markdown code blocks     |
-| url             | Copy URL behind =index.php/= with the method like, but without the API URL: =GET v1/hours/all=                 |
-| copyall         | Copy cURL with the status code, response time and response body                                            |
-| a               | Alias for =copyall @focus=                                                                                   |
-| ab              | Copy cURL with the status code and response time                                                           |
-|                 |                                                                                                            |
+| Command     | Description                                                                                          |
+|---------------+-----------------------------------------------------------------------------------------------------|
+| local          | Map the flow to the file system. The mapped JSON file can be edited and will be used on consequent access. |
+| l              | Alias for =local @focus=                                                                                 |
+| la             | Alias for =local @shown=                                                                                |
+| localdelete     | Delete the mapped flow on the file system                                                              |
+| ld             | Alias for =localdelete @focus=                                                                            |
+| lc             | Delete everything in the mapped file system directory                                                    |
+|               |                                                                                                     |
+| copyrequest   | Copy the request body                                                                                |
+| req           | Alias for =copyrequest @focus=                                                                          |
+| copyresponse  | Copy the response body                                                                              |
+| resp           | Alias for =copyresponse @focus=                                                                         |
+| cu            | Copy cURL with =```bash= ticks for Markdown formatting                                                    |
+| u             | Copy full URL                                                                                        |
+| ur             | Copy URL behind =index.php/= with the method like: =`GET v1/hours/all?params=...`= in Markdown code blocks    |
+| url            | Copy URL behind =index.php/= with the method like, but without the API URL: =GET v1/hours/all=                |
+| copyall        | Copy cURL with the status code, response time and response body                                        |
+| a             | Alias for =copyall @focus=                                                                               |
+| ab            | Copy cURL with the status code and response time                                                      |
+|               |                                                                                                     |
 | intercept.inner | Create an intercept filter for the current flow                                                            |
-| cept            | Alias for =intercept.inner @focus=                                                                           |
-| r               | Resume intercepted flow                                                                                    |
-|                 |                                                                                                            |
-| f               | Insert =set view_filter= into console                                                                        |
-| fc              | Clear =view_filter=                                                                                          |
-|                 |                                                                                                            |
-| k               | View keybindings                                                                                           |
+| cept          | Alias for =intercept.inner @focus=                                                                        |
+| r              | Resume intercepted flow                                                                              |
+|               |                                                                                                     |
+| f              | Insert =set view_filter= into console                                                                       |
+| fc             | Clear =view_filter=                                                                                      |
+|               |                                                                                                     |
+| k             | View keybindings                                                                                     |
 
 Those commands are invoked first by hitting =:= and then entering any command.
 
