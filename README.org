@@ -18,49 +18,40 @@ pip install pyperclip pathlib mitmproxy
 
 ** Create the config.json file in the same directory as addon-commands.py
 
-Those 3 JSON keys are mandatory and you need to set them up for your system. Here is an example how it could look like:
+Those 2 JSON keys are mandatory and you need to set them up for your system. Here is an example how it could look like:
+
+Note that =mapLocalBaseUrls= is an array and can contain multiple base URLs. But take care that the file system does not reflect this, so the mapped file is overwritten regardless of the base URL.
 
 #+begin_src json
 {
   "mapLocalBaseUrls": ["http://api.baubuddy.de/int/index.php/"],
-  "mapLocalDir": "/Users/dima/vero/mitmproxy-local/",
-  "startCommandOnLocalMap": ["notepad", "###"]
+  "mapLocalDir": "/Users/dima/vero/mitmproxy-local/"
 }
+#+end_src
+
+Optionally, you can add the =startCommandOnLocalMap= array to specify a program which should be launched on command =l= to view the current flow. The =###= string in =startCommandOnLocalMap= is replaced with the file path of the mapped file.
+
+#+begin_src json
+  "startCommandOnLocalMap": ["notepad", "###"]
 #+end_src
 
 Or an example for Emacs:
 
 #+begin_src json
-{
-  "mapLocalBaseUrls": [
-    "http://api.baubuddy.de/int/index.php/",
-    "http://api.baubuddy.de/dev/index.php/",
-    "http://api.baubuddy.de/index.php/",
-    "http://intern.digithebutler.at:8080/api/index.php/"
-  ],
-  "mapLocalDir": "/Users/dima/vero/mitmproxy-local/",
   "startCommandOnLocalMap": [
     "emacsclient",
     "-e",
     "(run-at-time nil nil (lambda () (x-focus-frame nil) (let (query-about-changed-file) (find-file \"###\") (revert-buffer-quick) (goto-char (point-min)))))"
   ]
-}
 #+end_src
 
-Note that =mapLocalBaseUrls= is an array and can contain multiple base URLs. But take care that the file system does not reflect this, so the mapped file is overwritten regardless of the base URL.
-
----
-
-The =###= string in =startCommandOnLocalMap= is replaced with the file path of the mapped file.
-
-Feel free to set =startCommandOnLocalMap= to an empty array if you do not want to use this functionality.
-Or use any program you like like =vim= or =emacsclient=.
-
-You can also use this to open =PhpStorm=:
+You can also use this on Windows to open =PhpStorm=:
 
 #+begin_src json
 "startCommandOnLocalMap": ["C:/Program Files/JetBrains/PhpStorm 2022.1.2/bin/phpstorm64.exe", "###"]
 #+end_src
+
+If =startCommandOnLocalMap= is not present, =$EDITOR= is used to view the flow.
 
 ** Use Windows Terminal/Powershell to launch mitmproxy
 

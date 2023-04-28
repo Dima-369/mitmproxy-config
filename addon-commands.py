@@ -21,7 +21,6 @@ with open(os.path.join(
 
 map_local_base_urls = json_config['mapLocalBaseUrls']
 map_local_dir = json_config['mapLocalDir']
-start_command_on_local_map = json_config['startCommandOnLocalMap']
 
 
 def is_url_in_map_local_base_urls(url):
@@ -432,7 +431,6 @@ class CreateLocal:
                     if request_content == "unmappable content for JSON" or \
                             resp == "unmappable content for JSON":
                         unmappable_response_count += 1
-                        ctx.log.alert("failoo")
                         continue
 
                     req = flow.request
@@ -443,16 +441,30 @@ class CreateLocal:
                         'url': req.method + ' ' + req.pretty_url,
                         'requestBody': request_content,
                     }
-                    with open(local_file, 'w+') as f:
-                        f.write(json.dumps(data, indent=2))
 
-                    if single_flow and len(start_command_on_local_map) >= 1:
-                        cmd = map(lambda x: x.replace('###', local_file),
-                                  start_command_on_local_map)
-                        subprocess.Popen(cmd,
-                                         stdout=subprocess.PIPE,
-                                         stderr=subprocess.PIPE,
-                                         stdin=subprocess.PIPE)
+                    json_string = json.dumps(data, indent=2)
+
+                    if single_flow:
+                        if 'startCommandOnLocalMap' in json_config and \
+                                len(json_config['startCommandOnLocalMap']) >= 1:
+
+                            with open(local_file, 'w+') as f1:
+                                f1.write(json_string)
+
+                            command = json_config['startCommandOnLocalMap']
+                            cmd = map(lambda x: x.replace('###', local_file), command)
+                            subprocess.Popen(cmd,
+                                             stdout=subprocess.PIPE,
+                                             stderr=subprocess.PIPE,
+                                             stdin=subprocess.PIPE)
+                        else:
+                            c = ctx.master.spawn_editor(json_string)
+                            with open(local_file, 'w+') as f2:
+                                f2.write(c)
+                    else:
+                        with open(local_file, 'w+') as f3:
+                            f3.write(json_string)
+
                 else:
                     if single_flow:
                         has_error = True
