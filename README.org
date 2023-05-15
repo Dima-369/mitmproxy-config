@@ -108,7 +108,7 @@ end
 | localdelete     | Delete the mapped flow on the file system                                                              |
 | ld             | Alias for =localdelete @focus=                                                                            |
 | lc             | Delete everything in the mapped file system directory                                                    |
-|               |                                                                                                     |
+
 | copyrequest   | Copy the request body                                                                                |
 | req           | Alias for =copyrequest @focus=                                                                          |
 | copyresponse  | Copy the response body                                                                              |
@@ -120,14 +120,13 @@ end
 | copyall        | Copy cURL with the status code, response time and response body                                        |
 | a             | Alias for =copyall @focus=                                                                               |
 | ab            | Copy cURL with the status code and response time                                                      |
-|               |                                                                                                     |
+
 | intercept.inner | Create an intercept filter for the current flow                                                            |
 | cept          | Alias for =intercept.inner @focus=                                                                        |
 | r              | Resume intercepted flow                                                                              |
-|               |                                                                                                     |
+
 | f              | Insert =set view_filter= into console                                                                       |
 | fc             | Clear =view_filter=                                                                                      |
-|               |                                                                                                     |
 | k             | View keybindings                                                                                     |
 
 Those commands are invoked first by hitting =:= and then entering any command.

@@ -20,6 +20,9 @@
 - key: "a"
   ctx: ["flowview", "flowlist", "help", "keybindings"]
   cmd: console.command
+- key: "z"
+  ctx: ["flowlist"]
+  cmd: view.flows.remove !~q
 - key: "m"
   ctx: ["global", "flowview", "flowlist"]
   cmd: console.nav.pagedown
