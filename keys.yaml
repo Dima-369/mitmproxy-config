@@ -22,7 +22,7 @@
   cmd: console.command
 - key: "z"
   ctx: ["flowlist"]
-  cmd: view.flows.remove !~q
+  cmd: view.flows.remove '~e | !~q'
 - key: "m"
   ctx: ["global", "flowview", "flowlist"]
   cmd: console.nav.pagedown
