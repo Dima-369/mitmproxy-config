@@ -29,6 +29,9 @@ Note that =mapLocalBaseUrls= is an array and can contain multiple base URLs. But
 }
 #+end_src
 
+
+*** Optional key =startCommandOnLocalMap=
+
 Optionally, you can add the =startCommandOnLocalMap= array to specify a program which should be launched on command =l= to view the current flow. The =###= string in =startCommandOnLocalMap= is replaced with the file path of the mapped file.
 
 #+begin_src json
@@ -52,6 +55,16 @@ You can also use this on Windows to open =PhpStorm=:
 #+end_src
 
 If =startCommandOnLocalMap= is not present, =$EDITOR= is used to view the flow.
+
+*** Optional key =stripUrlParts=
+
+You can add =stripUrlParts= to replace parts of a URL via wildcard for local mapping. So if this is added to =config.json=:
+
+#+begin_src json
+"stripUrlParts": ["filter[editedOn][gte]"]
+#+end_src
+
+It means that =GET v3/projects?foo=bar&filter[editedOn][gte]=2023-06-05T09:52:00Z= is equivalent to =GET v3/projects?foo=bar=. The =filter[editedOn][gte]= parameter is simply ignored regardless what is contains for mapping the flow to the local file system.
 
 ** Use Windows Terminal/Powershell to launch mitmproxy
 

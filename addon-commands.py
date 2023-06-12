@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 import pathlib
+import urllib.parse
 import re
 import shlex
 import shutil
@@ -363,9 +364,26 @@ def create_url_parameters_hash(url):
     return ''
 
 
+def append_to_debug(data):
+    home_dir = os.path.expanduser("~")
+    debug_file = os.path.join(home_dir, "debug.py")
+    with open(debug_file, "a") as df:
+        df.write(data + '\n')
+
+
 # noinspection PyShadowingNames
 def map_flow_to_local_path(flow):
     url = flow.request.pretty_url
+
+    if 'stripUrlParts' in json_config:
+        query_params = parse_qs(urlparse(url).query)
+        for key in json_config['stripUrlParts']:
+            query_params.pop(key, None)
+
+        new_query_string = "&".join(f"{key}={value[0]}" for key, value in query_params.items())
+        # noinspection PyProtectedMember
+        url = urlparse(url)._replace(query=new_query_string).geturl()
+
     without_parameters = get_url_without_parameters(url)
     after_base = get_after_base_url_from_local_base(without_parameters)
     base_name = os.path.basename(after_base)
