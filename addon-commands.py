@@ -100,13 +100,7 @@ def get_curl_formatted():
 
             query_params = parse_qs(urlparse(s).query)
             if len(query_params) >= 1:
-
-                last = "/index.php/"
-                if last in s:
-                    url = s[s.index(last) + len(last):]
-                else:
-                    url = s
-
+                url = strip_base_url_prefix(s)
                 if '?' in url:
                     url = url[:url.index('?')]
 
@@ -157,13 +151,7 @@ class ShortUrlMarkdownAddon:
         Example: `GET printouts/printhours.pdf`
         """
         ctx.master.commands.execute("cut.clip @focus request.url")
-        raw_url = unquote(pyperclip.paste())
-
-        last = "/index.php/"
-        if last in raw_url:
-            url = raw_url[raw_url.index(last) + len(last):]
-        else:
-            url = raw_url
+        url = strip_base_url_prefix(unquote(pyperclip.paste()))
 
         ctx.master.commands.execute("cut.clip @focus request.method")
         method = pyperclip.paste()
@@ -183,14 +171,10 @@ class ShortUrlAddon:
         """
         ctx.master.commands.execute("cut.clip @focus request.url")
         raw_url = unquote(pyperclip.paste())
-
-        last = "/index.php/"
-        if last in raw_url:
-            url = raw_url[raw_url.index(last) + len(last):]
+        url = strip_base_url_prefix(raw_url)
+        if raw_url != url:
             if "?" in url:
                 url = url[:url.index("?")]
-        else:
-            url = raw_url
 
         ctx.master.commands.execute("cut.clip @focus request.method")
         method = pyperclip.paste()
@@ -420,6 +404,23 @@ def format_any_content(content):
             return "unmappable content for JSON"
 
 
+def strip_base_url_prefix(url):
+    for base_url in map_local_base_urls:
+        if url.startswith(base_url):
+            return url[len(base_url):]
+    return url
+
+
+def check_if_flow_ignored(flow):
+    if 'ignoreForLocalMapping' in json_config:
+        url = strip_base_url_prefix(flow.request.pretty_url)
+        for ignore in json_config['ignoreForLocalMapping']:
+            parts = ignore.split(" ")
+            if parts[0] == flow.request.method and parts[1] == url:
+                return True
+    return False
+
+
 class CreateLocal:
 
     @command.command("local")
@@ -433,6 +434,9 @@ class CreateLocal:
             if flow.response:
                 url = flow.request.pretty_url
                 if is_url_in_map_local_base_urls(url):
+                    if check_if_flow_ignored(flow):
+                        continue
+
                     local_file = map_flow_to_local_path(flow)
                     local_dir = os.path.dirname(local_file)
 

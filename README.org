@@ -64,7 +64,17 @@ You can add =stripUrlParts= to replace parts of a URL via wildcard for local map
 "stripUrlParts": ["filter[editedOn][gte]"]
 #+end_src
 
-It means that =GET v3/projects?foo=bar&filter[editedOn][gte]=2023-06-05T09:52:00Z= is equivalent to =GET v3/projects?foo=bar=. The =filter[editedOn][gte]= parameter is simply ignored regardless what is contains for mapping the flow to the local file system.
+It means that =GET v3/projects?foo=bar&filter[editedOn][gte]=2023-06-05T09:52:00Z= is equivalent to =GET v3/projects?foo=bar=. The =filter[editedOn][gte]= parameter is simply ignored regardless what it contains for mapping the flow to the local file system.
+
+*** Optional key =ignoreForLocalMapping=
+
+If use =la= often to map out all shown flows, it can be useful to ignore certain flows like =POST login= where the token needs to be unique and mapping the response locally is rarely useful.
+
+You can ignore those like this:
+
+#+begin_src json
+"ignoreForLocalMapping": ["POST login", "POST login/refresh"]
+#+end_src
 
 ** Use Windows Terminal/Powershell to launch mitmproxy
 
