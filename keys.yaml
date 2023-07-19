@@ -20,6 +20,9 @@
 - key: "a"
   ctx: ["flowview", "flowlist", "help", "keybindings"]
   cmd: console.command
+- key: "x"
+  ctx: ["flowlist"]
+  cmd: view.flows.remove @focus'
 - key: "z"
   ctx: ["flowlist"]
   cmd: view.flows.remove '~e | !~q'
