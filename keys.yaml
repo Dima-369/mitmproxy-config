@@ -32,6 +32,15 @@
 - key: "v"
   ctx: ["global", "flowview", "flowlist"]
   cmd: console.nav.pageup
+- key: "="
+  ctx: ["global"]
+  cmd: console.layout.cycle
+- key: "-"
+  ctx: ["flowview"]
+  cmd: view.focus.prev
+- key: "+"
+  ctx: ["flowview"]
+  cmd: view.focus.next
 # - key: "ctrl d"
 #   ctx: ["global"]
 #   cmd: console.nav.pagedown
