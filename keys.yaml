@@ -22,7 +22,7 @@
   cmd: console.command
 - key: "x"
   ctx: ["flowlist"]
-  cmd: view.flows.remove @focus'
+  cmd: view.flows.remove @focus
 - key: "z"
   ctx: ["flowlist"]
   cmd: view.flows.remove '~e | !~q'
