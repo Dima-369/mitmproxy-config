@@ -120,6 +120,7 @@ function mi
 end
 #+end_src
 
+Use =-setsecurewebproxystate= if you need HTTPS support as well.
 
 * Command overview
 
