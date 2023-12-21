@@ -561,14 +561,6 @@ class ClearMappedLocalRequests:
         ctx.log.alert('Deleted everything under ' + map_local_dir)
 
 
-class ClearViewFilterKey:
-
-    @command.command("fc")
-    def do(self) -> None:
-        ctx.master.commands.execute("set view_filter ''")
-        ctx.log.alert('Cleared view_filter')
-
-
 class SetupViewFilterKey:
 
     @command.command("f")
@@ -596,7 +588,6 @@ addons = [
     AllResponseWithoutBodyAddon(),
     # keys
     SetupViewFilterKey(),
-    ClearViewFilterKey(),
     DeleteLocalRequestKey(),
     CreateLocalKey(),
     CreateAllLocalKey(),

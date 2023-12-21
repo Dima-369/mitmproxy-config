@@ -4,6 +4,8 @@
 - key: "+"
   cmd: export.clip curl @focus
   help: Copy curl to clipboard
+- key: "l"
+  cmd: set view_filter ''
 - key: "t"
   cmd: console.nav.down
 - key: "c"
