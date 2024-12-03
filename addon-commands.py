@@ -2,7 +2,6 @@ import hashlib
 import json
 import os
 import pathlib
-import urllib.parse
 import re
 import shlex
 import shutil
@@ -22,6 +21,12 @@ with open(os.path.join(
 
 map_local_base_urls = json_config['mapLocalBaseUrls']
 map_local_dir = json_config['mapLocalDir']
+
+
+def format_flow_count(number):
+    if number == 1:
+        return "1 flow"
+    return str(number) + " flows"
 
 
 def is_url_in_map_local_base_urls(url):
@@ -386,19 +391,27 @@ class MapLocalRequests:
         if os.path.exists(local_file):
             with open(local_file) as f:
                 data = json.loads(f.read())
+                response = data['response']
+                if response is None:
+                    response = b''
+                else:
+                    response = json.dumps(data['response'], indent=2)
                 flow.response = http.Response.make(
-                    data['statusCode'], json.dumps(data['response'], indent=2),
-                    data['headers'])
+                    data['statusCode'], response, data['headers'])
 
 
 def format_any_content(content):
+    # why this?
     if content == 'b':
         return None
     try:
         return json.loads(content)
     except (json.JSONDecodeError, UnicodeDecodeError):
         try:
-            return content.decode('utf-8')
+            decoded = content.decode('utf-8')
+            if decoded == "":
+                return None
+            return decoded
         except UnicodeDecodeError:
             # note that this is the case for POST files
             return "unmappable content for JSON"
@@ -427,7 +440,7 @@ class CreateLocal:
     def do(self, flows: Sequence[Flow]) -> None:
         has_error = False
         single_flow = len(flows) == 1
-        no_response_count = 0
+        in_transit_count = 0
         unmappable_response_count = 0
 
         for flow in flows:
@@ -494,21 +507,21 @@ class CreateLocal:
                             'Configured base URLs are not present: ' +
                             str(map_local_base_urls))
             else:
-                no_response_count += 1
+                in_transit_count += 1
 
         if not has_error:
-            if no_response_count == 0 and unmappable_response_count == 0:
-                ctx.log.alert('Saved ' + str(len(flows)) + ' flow(s) to ' +
-                              map_local_dir)
+            if in_transit_count == 0 and unmappable_response_count == 0:
+                ctx.log.alert('Saved ' + format_flow_count(len(flows)) + ' to ' + map_local_dir)
             else:
-                ctx.log.alert('Saved ' + str(
-                    len(flows) - no_response_count -
-                    unmappable_response_count) + ' flow(s) to ' +
+                save_count = len(flows) - in_transit_count - unmappable_response_count
+                ctx.log.alert('Saved ' +
+                              format_flow_count(save_count) +
+                              ' to ' +
                               map_local_dir + ' --- ' +
-                              str(no_response_count) +
-                              ' flow(s) without response --- ' +
-                              str(unmappable_response_count) +
-                              ' flow(s) unmappable to JSON')
+                              format_flow_count(in_transit_count) +
+                              ' in transit --- ' +
+                              format_flow_count(unmappable_response_count) +
+                              ' unmappable to JSON')
 
 
 class CreateAllLocalKey:
