@@ -227,7 +227,7 @@ class AllResponseBodyAddon:
                 except Exception:
                     as_json = "```\n" + \
                               trim_response_content(response) + \
-                              "```"
+                              "\n```"
                 pyperclip.copy(curl + "\n" + "Took " +
                                "{:.2f}".format(time) + "s with " +
                                "status code " + code + " to return:\n\n" +
