@@ -126,7 +126,7 @@ def get_curl_formatted():
                 markdown_table = "\n<details>\n<summary>" + full + "</summary>\n\n"
                 for param in param_list:
                     markdown_table += f"`{param['Parameter']}`\n{param['Value']}\n\n"
-                markdown_table += '</details>'
+                markdown_table += '</details>\n'
 
             next_cmd = False
             last_opt = None
